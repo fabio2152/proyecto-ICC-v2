@@ -6,11 +6,10 @@ Plataforma web para monitoreo en tiempo real de signos vitales. Recibe datos de 
 
 ## Clonar el repositorio
 
-Antes de ejecutar el proyecto, tu compañera (o cualquier persona) debe clonar el repositorio en su PC:
+Antes de ejecutar el proyecto, clonar el repositorio en su PC:
 
 ```bash
 git clone https://github.com/fabio2152/proyecto-ICC-v2.git
-cd proyecto-ICC-v2
 ```
 
 Esto descarga todo el código. A continuación sigue los pasos de instalación y ejecución.
@@ -23,10 +22,9 @@ Esto descarga todo el código. A continuación sigue los pasos de instalación y
 - **Python 3.11+** instalado → https://www.python.org/downloads/
 - **Node.js 18+** instalado → https://nodejs.org/
 
-### Backend
+### Dentro de la carpeta Backend
 
 ```bash
-cd monitor/backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -35,10 +33,9 @@ python seed.py
 
 El comando `seed.py` crea la base de datos y carga 24 horas de lecturas sintéticas de ejemplo.
 
-### Frontend
+### Dentro de la carpeta Frontend
 
 ```bash
-cd monitor/frontend
 npm install
 ```
 
@@ -48,17 +45,15 @@ npm install
 
 Necesitas abrir **dos terminales** al mismo tiempo. Una para el backend y otra para el frontend.
 
-### Terminal 1 — Backend
+### Terminal 1 — Dentro de la carpeta Backend
 
 ```bash
-cd monitor/backend
 venv\Scripts\activate
 uvicorn main:app --reload --port 8000
 ```
 
 Espera hasta ver:
 ```
-INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000
 ```
 
@@ -67,13 +62,11 @@ INFO:     Uvicorn running on http://127.0.0.1:8000
 ### Terminal 2 — Frontend
 
 ```bash
-cd monitor/frontend
 npm run dev
 ```
 
 Espera hasta ver:
 ```
-VITE  ready in ~800ms
 ➜  Local:   http://localhost:5173/
 ```
 
