@@ -59,7 +59,7 @@ INFO:     Uvicorn running on http://127.0.0.1:8000
 
 > No cierres esta terminal. Si la cierras, el backend se apaga.
 
-### Terminal 2 — Frontend
+### Terminal 2 — Dentro de la carpeta Frontend
 
 ```bash
 npm run dev
