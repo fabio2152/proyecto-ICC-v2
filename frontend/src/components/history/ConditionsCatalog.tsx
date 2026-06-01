@@ -1,164 +1,145 @@
-import { Heart, Wind, Activity, AlertTriangle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, X } from 'lucide-react'
 
 interface Condition {
+  id: string
   name: string
-  category: 'cardiaca' | 'respiratoria' | 'mixta'
-  whyHR: string
-  whySpo2: string
-  alertThreshold: string
 }
 
-const CONDITIONS: Condition[] = [
-  {
-    name: 'Insuficiencia cardíaca congestiva',
-    category: 'cardiaca',
-    whyHR: 'El corazón acelera para compensar su bajo rendimiento. Taquicardias persistentes indican descompensación.',
-    whySpo2: 'La congestión pulmonar impide el intercambio gaseoso, generando desaturaciones crónicas.',
-    alertThreshold: 'FC > 100 BPM en reposo · SpO₂ < 94%',
-  },
-  {
-    name: 'Fibrilación auricular (FA)',
-    category: 'cardiaca',
-    whyHR: 'La FA genera una FC irregularmente alta (100–180 BPM). El monitoreo continuo detecta episodios paroxísticos.',
-    whySpo2: 'FC muy elevada reduce el tiempo de llenado ventricular y puede bajar la SpO₂.',
-    alertThreshold: 'FC > 110 BPM sostenida · variabilidad cardíaca extrema',
-  },
-  {
-    name: 'Taquicardia ventricular / Arritmias',
-    category: 'cardiaca',
-    whyHR: 'Las arritmias ventriculares generan FC peligrosamente altas (>150 BPM) con riesgo de muerte súbita.',
-    whySpo2: 'El gasto cardíaco cae y compromete la perfusión pulmonar.',
-    alertThreshold: 'FC > 130 BPM en reposo · SpO₂ < 92%',
-  },
-  {
-    name: 'Síndrome coronario agudo (post-infarto)',
-    category: 'cardiaca',
-    whyHR: 'Durante la recuperación, la FC elevada aumenta la demanda de oxígeno del miocardio dañado.',
-    whySpo2: 'El tejido cardíaco necrótico reduce la eficiencia de bomba y puede desaturar al paciente.',
-    alertThreshold: 'FC > 90 BPM en reposo · SpO₂ < 95%',
-  },
-  {
-    name: 'Bradicardia sintomática',
-    category: 'cardiaca',
-    whyHR: 'FC < 50 BPM en reposo puede indicar bloqueo AV o disfunción del nodo sinusal con riesgo de síncope.',
-    whySpo2: 'FC muy baja reduce el gasto cardíaco y puede comprometer la oxigenación cerebral.',
-    alertThreshold: 'FC < 50 BPM sostenida · SpO₂ < 93%',
-  },
-  {
-    name: 'EPOC (Enfermedad Pulmonar Obstructiva Crónica)',
-    category: 'respiratoria',
-    whyHR: 'Las exacerbaciones generan taquicardia refleja. La taquicardia también puede ser signo de infección.',
-    whySpo2: 'La obstrucción del flujo aéreo es la causa principal de hipoxemia. Objetivo terapéutico: SpO₂ 88–92%.',
-    alertThreshold: 'SpO₂ < 88% · FC > 100 BPM durante exacerbación',
-  },
-  {
-    name: 'Asma severa',
-    category: 'respiratoria',
-    whyHR: 'El broncoespasmo genera taquicardia por hipoxia e hiperactividad simpática. FC > 110 indica crisis moderada-severa.',
-    whySpo2: 'La crisis asmática impide la ventilación alveolar. SpO₂ < 92% indica crisis severa que requiere intervención.',
-    alertThreshold: 'SpO₂ < 92% · FC > 110 BPM durante crisis',
-  },
-  {
-    name: 'Apnea obstructiva del sueño (AOS)',
-    category: 'respiratoria',
-    whyHR: 'Cada episodio de apnea activa el sistema simpático, generando taquicardia nocturna repetitiva.',
-    whySpo2: 'Las apneas producen desaturaciones cíclicas nocturnas (SpO₂ cae hasta 70–80% en casos severos).',
-    alertThreshold: 'SpO₂ < 90% nocturna · FC irregular durante sueño',
-  },
-  {
-    name: 'Hipertensión pulmonar',
-    category: 'respiratoria',
-    whyHR: 'El ventrículo derecho trabaja contra alta presión y genera taquicardia compensatoria progresiva.',
-    whySpo2: 'La vasoconstricción pulmonar reduce el intercambio gaseoso. SpO₂ crónicamente baja (89–93%).',
-    alertThreshold: 'SpO₂ < 90% · FC > 100 BPM en reposo',
-  },
-  {
-    name: 'COVID-19 / Síndrome post-COVID',
-    category: 'respiratoria',
-    whyHR: 'La disfunción autonómica post-COVID genera taquicardia postural (POTS) y en reposo.',
-    whySpo2: 'La hipoxia silenciosa es característica del COVID-19: SpO₂ cae sin disnea aparente ("happy hypoxia").',
-    alertThreshold: 'SpO₂ < 94% · FC > 100 BPM en reposo prolongado',
-  },
-  {
-    name: 'Anemia severa',
-    category: 'mixta',
-    whyHR: 'La baja hemoglobina obliga al corazón a bombear más rápido para mantener el aporte de oxígeno a tejidos.',
-    whySpo2: 'La SpO₂ puede parecer normal (mide saturación, no cantidad de hemoglobina), pero la FC alta es el indicador clave.',
-    alertThreshold: 'FC > 100 BPM en reposo persistente',
-  },
-  {
-    name: 'Diabetes con complicaciones cardiovasculares',
-    category: 'mixta',
-    whyHR: 'La neuropatía autonómica diabética altera la regulación cardíaca. La taquicardia en reposo es un signo temprano.',
-    whySpo2: 'Las complicaciones micro y macrovasculares pueden comprometer la perfusión pulmonar.',
-    alertThreshold: 'FC > 90 BPM en reposo · SpO₂ < 95%',
-  },
-  {
-    name: 'Insuficiencia respiratoria crónica',
-    category: 'respiratoria',
-    whyHR: 'La hipoxia crónica activa el sistema simpático generando taquicardia sostenida como mecanismo compensador.',
-    whySpo2: 'La SpO₂ es el parámetro de referencia para titular la oxigenoterapia domiciliaria (objetivo > 90%).',
-    alertThreshold: 'SpO₂ < 90% · FC > 100 BPM',
-  },
-  {
-    name: 'Cardiopatías congénitas (adultos)',
-    category: 'cardiaca',
-    whyHR: 'Las cardiopatías congénitas no corregidas generan arritmias crónicas. El monitoreo detecta descompensaciones.',
-    whySpo2: 'Los shunts intracardíacos mezclan sangre oxigenada y no oxigenada, causando cianosis y SpO₂ baja.',
-    alertThreshold: 'SpO₂ < 90% · FC fuera del rango basal del paciente',
-  },
+const ALL_CONDITIONS: Condition[] = [
+  { id: 'heart_failure',      name: 'Falla del corazón' },
+  { id: 'arrhythmia',         name: 'Latidos irregulares' },
+  { id: 'fast_heart',         name: 'Corazón acelerado' },
+  { id: 'slow_heart',         name: 'Corazón muy lento' },
+  { id: 'post_infarct',       name: 'Recuperación de infarto' },
+  { id: 'hypertension',       name: 'Presión arterial alta' },
+  { id: 'congenital_heart',   name: 'Problema del corazón de nacimiento' },
+  { id: 'copd',               name: 'Pulmones obstruidos (EPOC)' },
+  { id: 'asthma',             name: 'Asma' },
+  { id: 'sleep_apnea',        name: 'Paradas al respirar al dormir' },
+  { id: 'pulm_hypertension',  name: 'Presión alta en los pulmones' },
+  { id: 'post_covid',         name: 'COVID-19 / Post-COVID' },
+  { id: 'resp_difficulty',    name: 'Dificultad para respirar' },
+  { id: 'anemia',             name: 'Anemia' },
+  { id: 'diabetes',           name: 'Diabetes' },
+  { id: 'anxiety',            name: 'Ansiedad' },
+  { id: 'chronic_stress',     name: 'Estrés crónico' },
+  { id: 'obesity',            name: 'Obesidad' },
+  { id: 'kidney',             name: 'Problemas de riñón' },
+  { id: 'thyroid',            name: 'Problemas de tiroides' },
+  { id: 'post_surgery',       name: 'Recuperación de cirugía' },
+  { id: 'elderly',            name: 'Adulto mayor en vigilancia' },
+  { id: 'athlete',            name: 'Deportista en entrenamiento' },
+  { id: 'panic_attacks',      name: 'Ataques de pánico' },
+  { id: 'depression',         name: 'Depresión' },
+  { id: 'hypo_hyper_glycemia',name: 'Bajas o subidas de azúcar' },
+  { id: 'lung_cancer',        name: 'Cáncer de pulmón' },
+  { id: 'heart_cancer',       name: 'Cáncer relacionado al corazón' },
+  { id: 'neuromuscular',      name: 'Enfermedad muscular o nerviosa' },
+  { id: 'pregnancy_risk',     name: 'Embarazo de riesgo' },
 ]
 
-const CATEGORY_CONFIG = {
-  cardiaca: { label: 'Cardíaca', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', Icon: Heart },
-  respiratoria: { label: 'Respiratoria', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', Icon: Wind },
-  mixta: { label: 'Mixta', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20', Icon: Activity },
+const STORAGE_KEY = 'patient_conditions'
+
+function loadSaved(): Condition[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function save(conditions: Condition[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(conditions))
 }
 
 export default function ConditionsCatalog() {
+  const [selected, setSelected] = useState<Condition[]>(loadSaved)
+  const [showPicker, setShowPicker] = useState(false)
+
+  useEffect(() => {
+    save(selected)
+  }, [selected])
+
+  function remove(id: string) {
+    setSelected(prev => prev.filter(c => c.id !== id))
+  }
+
+  function add(condition: Condition) {
+    setSelected(prev => {
+      if (prev.find(c => c.id === condition.id)) return prev
+      return [...prev, condition]
+    })
+  }
+
+  const available = ALL_CONDITIONS.filter(c => !selected.find(s => s.id === c.id))
+
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-xs text-muted-foreground">
-        Condiciones clínicas en las que el monitoreo continuo de <strong className="text-foreground">frecuencia cardíaca</strong> y <strong className="text-foreground">saturación de oxígeno</strong> aporta valor diagnóstico y de seguimiento.
-      </p>
+    <>
+      {/* Lista de condiciones del paciente */}
+      <div className="flex flex-col gap-2">
+        {selected.length === 0 && (
+          <p className="text-sm text-muted-foreground py-2">
+            Aún no se han añadido condiciones para este paciente.
+          </p>
+        )}
 
-      {CONDITIONS.map((c) => {
-        const cat = CATEGORY_CONFIG[c.category]
-        const { Icon } = cat
-        return (
-          <div key={c.name} className="rounded-lg bg-card border border-border p-4 flex flex-col gap-3">
-            <div className="flex items-start gap-3">
-              <span className={`mt-0.5 flex-shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border ${cat.bg} ${cat.color}`}>
-                <Icon size={11} />
-                {cat.label}
-              </span>
-              <p className="font-medium text-sm">{c.name}</p>
+        {selected.map(c => (
+          <div key={c.id} className="flex items-center justify-between px-4 py-3 rounded-lg bg-muted/50 border border-border">
+            <span className="text-sm font-medium">{c.name}</span>
+            <button
+              onClick={() => remove(c.id)}
+              className="p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+              title="Eliminar condición"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
+
+        <button
+          onClick={() => setShowPicker(true)}
+          className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+        >
+          <Plus size={15} />
+          Añadir condición
+        </button>
+      </div>
+
+      {/* Modal picker */}
+      {showPicker && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl w-full max-w-sm flex flex-col max-h-[80vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+              <h2 className="font-semibold text-sm">Seleccionar condición</h2>
+              <button onClick={() => setShowPicker(false)} className="p-1 hover:bg-muted rounded">
+                <X size={16} />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex gap-2">
-                <Heart size={13} className="text-red-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-red-400 mb-0.5">Por qué monitorear FC</p>
-                  <p className="text-xs text-muted-foreground">{c.whyHR}</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Wind size={13} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-blue-400 mb-0.5">Por qué monitorear SpO₂</p>
-                  <p className="text-xs text-muted-foreground">{c.whySpo2}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-1 border-t border-border">
-              <AlertTriangle size={11} className="text-yellow-400 flex-shrink-0" />
-              <p className="text-xs text-yellow-400/80"><span className="font-medium">Umbral de alerta:</span> {c.alertThreshold}</p>
+            {/* Lista scrollable */}
+            <div className="overflow-y-auto flex-1 py-2">
+              {available.length === 0 ? (
+                <p className="text-sm text-muted-foreground px-5 py-3">
+                  Ya están todas las condiciones añadidas.
+                </p>
+              ) : (
+                available.map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { add(c); setShowPicker(false) }}
+                    className="w-full text-left px-5 py-3 text-sm hover:bg-muted/60 transition-colors border-b border-border/50 last:border-0"
+                  >
+                    {c.name}
+                  </button>
+                ))
+              )}
             </div>
           </div>
-        )
-      })}
-    </div>
+        </div>
+      )}
+    </>
   )
 }

@@ -40,9 +40,9 @@ export default function History() {
       {/* Catálogo de condiciones objetivo */}
       <div className="rounded-lg bg-card border border-border p-5">
         <div className="mb-4">
-          <h2 className="text-sm font-medium">Condiciones clínicas objetivo</h2>
+          <h2 className="text-sm font-medium">Condiciones clínicas</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Pacientes con estas condiciones se benefician del monitoreo continuo de FC y SpO₂
+            Condiciones de salud del paciente
           </p>
         </div>
         <ConditionsCatalog />

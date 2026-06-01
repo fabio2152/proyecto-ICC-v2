@@ -26,9 +26,6 @@ export default function ActivityCard({ reading }: Props) {
           {config?.label ?? '--'}
         </span>
       </div>
-      <div className="text-xs text-muted-foreground">
-        {reading ? 'Clasificado por acelerómetro' : 'Sin datos'}
-      </div>
     </div>
   )
 }
