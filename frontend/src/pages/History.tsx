@@ -1,13 +1,7 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
-import client from '../api/client'
 import { useStats } from '../hooks/useStats'
 import { useAllEvents } from '../hooks/useEvents'
-import HistoryTimeline from '../components/history/HistoryTimeline'
-import HistoryEntryForm from '../components/history/HistoryEntryForm'
+import ConditionsCatalog from '../components/history/ConditionsCatalog'
 import { formatDate } from '../lib/utils'
-import type { MedicalHistoryEntry } from '../types'
 
 const EVENT_LABELS: Record<string, string> = {
   fall: 'Caída', low_spo2: 'SpO₂ baja', tachycardia: 'Taquicardia',
@@ -15,20 +9,11 @@ const EVENT_LABELS: Record<string, string> = {
 }
 
 export default function History() {
-  const [showForm, setShowForm] = useState(false)
   const { data: stats } = useStats()
   const { data: events } = useAllEvents()
-  const { data: history } = useQuery<MedicalHistoryEntry[]>({
-    queryKey: ['history'],
-    queryFn: async () => {
-      const { data } = await client.get<MedicalHistoryEntry[]>('/api/history')
-      return data
-    },
-  })
 
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
-      {showForm && <HistoryEntryForm onClose={() => setShowForm(false)} />}
 
       {/* Stats 24h */}
       <div className="rounded-lg bg-card border border-border p-5">
@@ -44,28 +29,26 @@ export default function History() {
           ].map((s) => (
             <div key={s.label}>
               <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className="text-xl font-bold tabular-nums">{s.value ?? '--'} <span className="text-sm font-normal text-muted-foreground">{s.unit}</span></p>
+              <p className="text-xl font-bold tabular-nums">
+                {s.value ?? '--'} <span className="text-sm font-normal text-muted-foreground">{s.unit}</span>
+              </p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Historial médico */}
+      {/* Catálogo de condiciones objetivo */}
       <div className="rounded-lg bg-card border border-border p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-medium">Historial médico</h2>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground hover:opacity-90"
-          >
-            <Plus size={13} />
-            Nueva entrada
-          </button>
+        <div className="mb-4">
+          <h2 className="text-sm font-medium">Condiciones clínicas objetivo</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Pacientes con estas condiciones se benefician del monitoreo continuo de FC y SpO₂
+          </p>
         </div>
-        <HistoryTimeline entries={history ?? []} />
+        <ConditionsCatalog />
       </div>
 
-      {/* Eventos */}
+      {/* Eventos detectados */}
       <div className="rounded-lg bg-card border border-border p-5">
         <h2 className="text-sm font-medium mb-4">Eventos detectados</h2>
         {!events || events.length === 0 ? (

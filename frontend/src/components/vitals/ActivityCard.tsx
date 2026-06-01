@@ -27,7 +27,7 @@ export default function ActivityCard({ reading }: Props) {
         </span>
       </div>
       <div className="text-xs text-muted-foreground">
-        {reading?.temperature != null ? `Temp: ${reading.temperature.toFixed(1)} °C` : 'Sin datos'}
+        {reading ? 'Clasificado por acelerómetro' : 'Sin datos'}
       </div>
     </div>
   )
