@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Wifi, WifiOff } from 'lucide-react'
 
 interface Props {
@@ -6,9 +7,16 @@ interface Props {
 }
 
 export default function ConnectionStatus({ lastSeen, patientName }: Props) {
+  // Tick propio cada 1s: fuerza re-render aunque React Query no traiga datos nuevos,
+  // para que Date.now() se recalcule y el badge cambie sin necesitar recargar la página.
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+
   // El backend devuelve timestamps UTC sin sufijo 'Z'. Sin él, JavaScript
-  // los interpreta como hora local (UTC-5 en Perú), haciendo que la diferencia
-  // sea siempre negativa → siempre "conectado". Añadimos 'Z' para forzar UTC.
+  // los interpreta como hora local (UTC-5 en Perú) → diferencia siempre negativa.
   const lastSeenUtc = lastSeen ? (lastSeen.endsWith('Z') ? lastSeen : lastSeen + 'Z') : undefined
   const connected = lastSeenUtc !== undefined && Date.now() - new Date(lastSeenUtc).getTime() < 15000
 
