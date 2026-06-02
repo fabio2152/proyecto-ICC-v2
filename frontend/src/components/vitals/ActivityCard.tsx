@@ -6,9 +6,9 @@ interface Props {
 }
 
 const ACTIVITY_MAP = {
-  rest: { label: 'Reposo', Icon: Bed, color: 'text-blue-400' },
-  walking: { label: 'Caminando', Icon: Footprints, color: 'text-green-400' },
-  running: { label: 'Corriendo', Icon: Zap, color: 'text-orange-400' },
+  rest:    { label: 'Reposo',    sub: 'Normal',           Icon: Bed,       color: 'text-blue-400',   ring: 'bg-blue-400/10' },
+  walking: { label: 'Caminando', sub: 'Actividad leve',   Icon: Footprints, color: 'text-green-400',  ring: 'bg-green-400/10' },
+  running: { label: 'Corriendo', sub: 'Actividad intensa', Icon: Zap,       color: 'text-orange-400', ring: 'bg-orange-400/10' },
 }
 
 export default function ActivityCard({ reading }: Props) {
@@ -19,12 +19,19 @@ export default function ActivityCard({ reading }: Props) {
     <div className="rounded-lg bg-card border border-border p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground font-medium">Actividad</span>
-        {config ? <config.Icon size={18} className={config.color} /> : <Bed size={18} className="text-muted-foreground" />}
+        <div className={`p-1.5 rounded-lg ${config?.ring ?? 'bg-muted'}`}>
+          {config
+            ? <config.Icon size={16} className={config.color} />
+            : <Bed size={16} className="text-muted-foreground" />}
+        </div>
       </div>
       <div className="flex items-end gap-2">
         <span className={`text-2xl font-bold ${config?.color ?? 'text-muted-foreground'}`}>
           {config?.label ?? '--'}
         </span>
+      </div>
+      <div className="text-xs text-muted-foreground">
+        {config?.sub ?? 'Sin datos'}
       </div>
     </div>
   )
