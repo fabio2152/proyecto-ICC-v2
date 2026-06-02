@@ -11,9 +11,9 @@ const WINDOWS = [
   { label: '24 h', minutes: 1440 },
 ]
 
-export default function VitalsChart() {
+export default function VitalsChart({ patientId }: { patientId?: number }) {
   const [window, setWindow] = useState(120)
-  const { data: readings } = useReadings(window)
+  const { data: readings } = useReadings(window, patientId)
 
   const chartData = (readings ?? []).map((r) => ({
     time: formatTime(r.timestamp),

@@ -1,9 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom'
+import { Activity } from 'lucide-react'
+import { AuthProvider } from './auth/AuthContext'
+import RequireAuth from './auth/RequireAuth'
 import Dashboard from './pages/Dashboard'
 import History from './pages/History'
-import { Activity } from 'lucide-react'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminPatients from './pages/admin/AdminPatients'
+import AdminPatientDetail from './pages/admin/AdminPatientDetail'
 
-function Layout({ children }: { children: React.ReactNode }) {
+function PatientLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="border-b border-border bg-card px-6 py-3 flex items-center gap-6">
@@ -35,14 +41,29 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Layout>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
+          {/* Vista del paciente (kiosco) — Paciente 0 */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/history" element={<History />} />
+          <Route path="/dashboard" element={<PatientLayout><Dashboard /></PatientLayout>} />
+          <Route path="/history" element={<PatientLayout><History /></PatientLayout>} />
+
+          {/* Panel de administración */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <AdminLayout />
+              </RequireAuth>
+            }
+          >
+            <Route index element={<AdminPatients />} />
+            <Route path="patients/:id" element={<AdminPatientDetail />} />
+          </Route>
         </Routes>
-      </Layout>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

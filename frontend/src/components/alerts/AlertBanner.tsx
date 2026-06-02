@@ -35,8 +35,8 @@ function EventRow({ event }: { event: Event }) {
   )
 }
 
-export default function AlertBanner() {
-  const { data: events } = useActiveEvents()
+export default function AlertBanner({ patientId }: { patientId?: number }) {
+  const { data: events } = useActiveEvents(patientId)
 
   if (!events || events.length === 0) return null
 

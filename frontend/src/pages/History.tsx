@@ -8,9 +8,9 @@ const EVENT_LABELS: Record<string, string> = {
   bradycardia: 'Bradicardia',
 }
 
-export default function History() {
-  const { data: stats } = useStats()
-  const { data: events } = useAllEvents()
+export default function History({ patientId }: { patientId?: number }) {
+  const { data: stats } = useStats(patientId)
+  const { data: events } = useAllEvents(patientId)
 
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
@@ -45,7 +45,7 @@ export default function History() {
             Condiciones de salud del paciente
           </p>
         </div>
-        <ConditionsCatalog />
+        <ConditionsCatalog patientId={patientId} />
       </div>
 
       {/* Eventos detectados */}

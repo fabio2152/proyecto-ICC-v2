@@ -89,6 +89,23 @@ http://localhost:5173
 
 ---
 
+## Dos vistas
+
+### Vista del paciente (kiosco)
+`http://localhost:5173` → dashboard e historial del paciente monitorizado (Paciente 0 = Fabio Malpartida). Sin login. Es la única que recibe datos del ESP32/simulador.
+
+### Panel de administrador
+`http://localhost:5173/admin` → requiere login:
+
+| Campo | Valor |
+|---|---|
+| Usuario | `admin` |
+| Contraseña | `admin123` |
+
+Desde el panel se pueden **ver, crear, editar y eliminar** pacientes, y entrar al dashboard/historial de cada uno. Los pacientes creados aquí no reciben datos en vivo (solo el Paciente 0, que además no se puede eliminar).
+
+---
+
 ## Arquitectura
 
 El proyecto sigue una arquitectura **frontend/backend separados**. Son dos servicios independientes que se comunican a través de una API REST.

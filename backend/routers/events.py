@@ -2,29 +2,20 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from models import Device, Event
+from models import Event
 from schemas import EventOut
-import os
+from deps import resolve_device
 
 router = APIRouter()
-
-DEMO_DEVICE_KEY = os.getenv("DEMO_DEVICE_KEY", "esp32-dev-key-001")
-
-
-async def _get_demo_device(db: AsyncSession) -> Device:
-    result = await db.execute(select(Device).where(Device.device_key == DEMO_DEVICE_KEY))
-    device = result.scalar_one_or_none()
-    if device is None:
-        raise HTTPException(status_code=404, detail="Dispositivo demo no encontrado")
-    return device
 
 
 @router.get("/events", response_model=list[EventOut])
 async def get_events(
     acknowledged: bool | None = Query(None),
+    patient_id: int | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    device = await _get_demo_device(db)
+    device = await resolve_device(db, patient_id)
     query = select(Event).where(Event.device_id == device.id).order_by(Event.detected_at.desc())
     if acknowledged is not None:
         query = query.where(Event.acknowledged == acknowledged)

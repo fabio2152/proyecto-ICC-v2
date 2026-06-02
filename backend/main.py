@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base
-from routers import ingest, readings, events, patients, history, stats
+from routers import ingest, readings, events, patients, history, stats, admin
 
 
 @asynccontextmanager
@@ -27,6 +27,7 @@ app.include_router(events.router, prefix="/api")
 app.include_router(patients.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 
 @app.get("/")

@@ -51,19 +51,21 @@ const ALL_CONDITIONS: Condition[] = [
   { id: 'pregnancy_risk',   name: 'Embarazo de riesgo',                    emoji: '🤰', category: 'otras' },
 ]
 
-const STORAGE_KEY = 'patient_conditions'
+function storageKey(patientId?: number): string {
+  return `patient_conditions_${patientId ?? 'demo'}`
+}
 
-function loadSaved(): Condition[] {
+function loadSaved(patientId?: number): Condition[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(storageKey(patientId))
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
   }
 }
 
-function save(conditions: Condition[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(conditions))
+function save(patientId: number | undefined, conditions: Condition[]) {
+  localStorage.setItem(storageKey(patientId), JSON.stringify(conditions))
 }
 
 const GROUPS: { category: Category; label: string }[] = [
@@ -72,11 +74,14 @@ const GROUPS: { category: Category; label: string }[] = [
   { category: 'otras', label: '🔹 Otras condiciones' },
 ]
 
-export default function ConditionsCatalog() {
-  const [selected, setSelected] = useState<Condition[]>(loadSaved)
+export default function ConditionsCatalog({ patientId }: { patientId?: number }) {
+  const [selected, setSelected] = useState<Condition[]>(() => loadSaved(patientId))
   const [showPicker, setShowPicker] = useState(false)
 
-  useEffect(() => { save(selected) }, [selected])
+  // Recarga las condiciones cuando cambia el paciente (vista admin)
+  useEffect(() => { setSelected(loadSaved(patientId)) }, [patientId])
+
+  useEffect(() => { save(patientId, selected) }, [patientId, selected])
 
   function remove(id: string) {
     setSelected(prev => prev.filter(c => c.id !== id))

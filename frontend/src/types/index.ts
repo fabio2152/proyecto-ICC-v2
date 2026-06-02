@@ -51,3 +51,21 @@ export interface Stats {
   min_spo2: number | null
   max_spo2: number | null
 }
+
+export interface PatientListItem {
+  id: number
+  name: string
+  age: number | null
+  diagnosis: string | null
+  device_key: string | null
+  is_protected: boolean
+  last_seen: string | null
+  last_heart_rate: number | null
+  last_spo2: number | null
+}
+
+export interface PatientInput {
+  name: string
+  age: number | null
+  diagnosis: string | null
+}

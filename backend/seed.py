@@ -54,7 +54,7 @@ async def seed():
             print("Base de datos ya tiene datos. Seed omitido.")
             return
 
-        patient = Patient(name="Carlos Ramírez", age=68, diagnosis="Hipertensión arterial, Diabetes tipo 2")
+        patient = Patient(name="Fabio Malpartida", age=68, diagnosis="Hipertensión arterial, Diabetes tipo 2")
         db.add(patient)
         await db.flush()
 
@@ -66,6 +66,24 @@ async def seed():
             last_seen=datetime.utcnow(),
         )
         db.add(device)
+        await db.flush()
+
+        # Pacientes de ejemplo (sin lecturas — su dashboard estará vacío).
+        # El ESP32 y el simulador solo alimentan al Paciente 0 (Fabio Malpartida).
+        ejemplos = [
+            ("María Gómez",   54, "Asma crónica"),
+            ("José Torres",   71, "EPOC"),
+            ("Lucía Ramírez", 39, "Arritmia en seguimiento"),
+        ]
+        for idx, (nombre, edad, dx) in enumerate(ejemplos, start=1):
+            p = Patient(name=nombre, age=edad, diagnosis=dx)
+            db.add(p)
+            await db.flush()
+            db.add(Device(
+                patient_id=p.id,
+                device_key=f"esp32-demo-{idx:03d}",
+                description="Dispositivo de ejemplo (sin datos en vivo)",
+            ))
         await db.flush()
 
         history_entries = [
