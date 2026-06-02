@@ -1,6 +1,6 @@
 from math import sqrt
 from datetime import datetime, timezone
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Reading, Event
 import os
@@ -11,7 +11,6 @@ TACHYCARDIA_BPM = float(os.getenv("TACHYCARDIA_BPM", "100"))
 TACHYCARDIA_CONSECUTIVE = int(os.getenv("TACHYCARDIA_CONSECUTIVE", "24"))
 BRADYCARDIA_BPM = float(os.getenv("BRADYCARDIA_BPM", "50"))
 BRADYCARDIA_CONSECUTIVE = int(os.getenv("BRADYCARDIA_CONSECUTIVE", "24"))
-IMMOBILITY_CONSECUTIVE = int(os.getenv("IMMOBILITY_CONSECUTIVE", "360"))
 
 
 def classify_activity(accel_x: float, accel_y: float, accel_z: float) -> str:
@@ -60,7 +59,8 @@ async def run_detection(
         db.add(event)
         triggered.append("fall")
 
-    readings = await _recent_readings(db, device_id, max(IMMOBILITY_CONSECUTIVE, TACHYCARDIA_CONSECUTIVE, LOW_SPO2_CONSECUTIVE))
+    n = max(TACHYCARDIA_CONSECUTIVE, LOW_SPO2_CONSECUTIVE)
+    readings = await _recent_readings(db, device_id, n)
 
     if len(readings) >= LOW_SPO2_CONSECUTIVE:
         window = readings[:LOW_SPO2_CONSECUTIVE]
@@ -103,28 +103,5 @@ async def run_detection(
                 )
                 db.add(event)
                 triggered.append("bradycardia")
-
-    if len(readings) >= IMMOBILITY_CONSECUTIVE:
-        window = readings[:IMMOBILITY_CONSECUTIVE]
-        first = window[-1]
-        if first.accel_x is not None:
-            ref_x, ref_y, ref_z = first.accel_x, first.accel_y, first.accel_z
-            immobile = all(
-                r.accel_x is not None and
-                abs(r.accel_x - ref_x) < 0.05 and
-                abs(r.accel_y - ref_y) < 0.05 and
-                abs(r.accel_z - ref_z) < 0.05
-                for r in window
-            )
-            if immobile and not await _has_active_event(db, device_id, "immobility"):
-                event = Event(
-                    device_id=device_id,
-                    type="immobility",
-                    severity="warning",
-                    message="Sin variación de movimiento durante 30 minutos",
-                    detected_at=datetime.now(timezone.utc).replace(tzinfo=None),
-                )
-                db.add(event)
-                triggered.append("immobility")
 
     return triggered
