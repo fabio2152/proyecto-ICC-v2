@@ -160,7 +160,7 @@ def _clear():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def _draw():
+def _draw(msg: str = ""):
     with _lock:
         running   = _state["running"]
         activity  = _state["activity"]
@@ -174,7 +174,12 @@ def _draw():
     W = 50
     bar = "─" * W
 
-    status = "● CONECTADO    " if running else "○ DESCONECTADO "
+    # ── Banner de estado (imposible de ignorar) ──────────────────────────────
+    if running:
+        estado_banner = f"  >>>  CONECTADO  —  enviando cada {INTERVAL}s  <<<"
+    else:
+        estado_banner = f"  >>>  DESCONECTADO  —  sin envío  <<<"
+
     hr_str   = f"{last_hr} BPM" if last_hr   is not None else "---"
     spo2_str = f"{last_spo2}%"  if last_spo2 is not None else "---"
     err_str  = f"⚠  {last_err}" if not last_ok and last_err else ""
@@ -186,7 +191,8 @@ def _draw():
     print(f"╔{bar}╗")
     print(f"║{'  SIMULADOR ESP32 — Monitor Biométrico':<{W}}║")
     print(f"╠{bar}╣")
-    print(row("Estado:",     status))
+    print(f"║{estado_banner:<{W}}║")          # <── estado prominente
+    print(f"╠{bar}╣")
     print(row("Actividad:",  _ACTIVITY_LABEL.get(activity, activity)))
     print(row("Modo:",       _SCENARIO_LABEL.get(scenario, scenario)))
     print(row("Enviadas:",   f"{count} lecturas"))
@@ -195,8 +201,10 @@ def _draw():
     if err_str:
         print(f"║  {err_str:<{W-2}}║")
     print(f"╠{bar}╣")
-    print(f"║{'  CONEXIÓN':<{W}}║")
-    print(f"║{'  [1]  Iniciar envío (conectar)'   if not running else '  [1]  Detener envío (desconectar)':<{W}}║")
+    if running:
+        print(f"║{'  [1]  DESCONECTAR  (detener envío)':<{W}}║")
+    else:
+        print(f"║{'  [1]  CONECTAR     (iniciar envío)':<{W}}║")
     print(f"║{'':<{W}}║")
     print(f"║{'  ACTIVIDAD DEL PACIENTE':<{W}}║")
     print(f"║{'  [2]  Reposo':<{W}}║")
@@ -216,52 +224,69 @@ def _draw():
     if scenario != "normal":
         mins = (24 * INTERVAL) // 60
         print(f"\n  ℹ  Modo '{_SCENARIO_LABEL[scenario]}' activo.")
-        if scenario == "tachycardia" or scenario == "bradycardia":
+        if scenario in ("tachycardia", "bradycardia"):
             print(f"     El evento se detecta tras ~{mins} min de lecturas consecutivas.")
         elif scenario == "low_spo2":
-            print(f"     El evento se detecta tras ~{12 * INTERVAL} segundos de lecturas consecutivas.")
-        print(f"     Presiona [9] para volver a normal.\n")
+            print(f"     El evento se detecta tras ~{12 * INTERVAL}s de lecturas consecutivas.")
+        print(f"     Presiona [9] para volver a normal.")
 
-    print("  Opción → ", end="", flush=True)
+    # Mensaje de confirmación de la acción anterior
+    if msg:
+        print(f"\n  ✓  {msg}")
+
+    print("\n  Opción → ", end="", flush=True)
 
 
-def _handle(choice: str):
+def _handle(choice: str) -> str:
+    """Aplica la acción y devuelve un mensaje de confirmación."""
     with _lock:
         if choice == "1":
             _state["running"] = not _state["running"]
+            return "CONECTADO — datos enviándose al backend" if _state["running"] \
+                   else "DESCONECTADO — envío detenido (señal perdida en ~15s)"
 
         elif choice == "2":
             _state["activity"] = "rest"
             _state["scenario"] = "normal"
+            return "Actividad cambiada a Reposo"
 
         elif choice == "3":
             _state["activity"] = "walking"
             _state["scenario"] = "normal"
+            return "Actividad cambiada a Caminando"
 
         elif choice == "4":
             _state["activity"] = "running"
             _state["scenario"] = "normal"
+            return "Actividad cambiada a Corriendo"
 
         elif choice == "5":
             _state["fall_next"] = True
-            _state["running"]   = True      # asegura que se envíe
+            _state["running"]   = True
+            return "Caída programada — se enviará en la próxima lectura"
 
         elif choice == "6":
             _state["scenario"]  = "low_spo2"
             _state["activity"]  = "rest"
             _state["running"]   = True
+            return f"Modo SpO2 baja activado — evento en ~{12 * INTERVAL}s"
 
         elif choice == "7":
             _state["scenario"]  = "tachycardia"
             _state["activity"]  = "rest"
             _state["running"]   = True
+            return f"Modo Taquicardia activado — evento en ~{(24 * INTERVAL) // 60} min"
 
         elif choice == "8":
             _state["scenario"]  = "bradycardia"
             _state["running"]   = True
+            return f"Modo Bradicardia activado — evento en ~{(24 * INTERVAL) // 60} min"
 
         elif choice == "9":
             _state["scenario"]  = "normal"
+            return "Modo Normal restaurado"
+
+    return ""
 
 
 # ─── Punto de entrada ─────────────────────────────────────────────────────────
@@ -278,16 +303,21 @@ def main():
     thread = threading.Thread(target=_sender_loop, daemon=True)
     thread.start()
 
+    msg = ""
     while True:
         _clear()
-        _draw()
+        _draw(msg)
+        msg = ""
         try:
             choice = input().strip()
         except (KeyboardInterrupt, EOFError):
             break
         if choice == "0":
             break
-        _handle(choice)
+        msg = _handle(choice)
+        # Pausa breve para que el mensaje sea visible antes del redibujado
+        if msg:
+            time.sleep(0.8)
 
     print("\n  Simulador detenido. Adiós.\n")
 
