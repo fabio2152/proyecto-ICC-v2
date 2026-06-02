@@ -6,7 +6,11 @@ interface Props {
 }
 
 export default function ConnectionStatus({ lastSeen, patientName }: Props) {
-  const connected = lastSeen !== undefined && Date.now() - new Date(lastSeen).getTime() < 15000
+  // El backend devuelve timestamps UTC sin sufijo 'Z'. Sin él, JavaScript
+  // los interpreta como hora local (UTC-5 en Perú), haciendo que la diferencia
+  // sea siempre negativa → siempre "conectado". Añadimos 'Z' para forzar UTC.
+  const lastSeenUtc = lastSeen ? (lastSeen.endsWith('Z') ? lastSeen : lastSeen + 'Z') : undefined
+  const connected = lastSeenUtc !== undefined && Date.now() - new Date(lastSeenUtc).getTime() < 15000
 
   return (
     <div className="flex items-center gap-3">
