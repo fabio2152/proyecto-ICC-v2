@@ -33,7 +33,7 @@ export default function HeartRateCard({ reading, previous }: Props) {
         {trend === 'stable' && <Minus size={16} className="text-muted-foreground mb-1" />}
       </div>
       <div className="text-xs text-muted-foreground">
-        {bpm !== null && bpm > 100 ? '⚠ Taquicardia' : bpm !== null && bpm < 50 ? '⚠ Bradicardia' : 'Rango normal'}
+        {bpm !== null && bpm > 100 ? '⚠ Taquicardia' : bpm !== null && bpm < 50 ? '⚠ Bradicardia' : 'Normal'}
       </div>
     </div>
   )
