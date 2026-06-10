@@ -98,13 +98,15 @@ export default function AdminPatients() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => navigate(`/admin/patients/${p.id}`)}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                          title="Ver dashboard"
-                        >
-                          <Eye size={15} />
-                        </button>
+                        {p.is_protected && (
+                          <button
+                            onClick={() => navigate(`/admin/patients/${p.id}`)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Ver dashboard"
+                          >
+                            <Eye size={15} />
+                          </button>
+                        )}
                         <button
                           onClick={() => openEdit(p)}
                           className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"

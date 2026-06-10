@@ -1,16 +1,26 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, FileText } from 'lucide-react'
 import Dashboard from '../Dashboard'
 import History from '../History'
-import { usePatient } from '../../hooks/usePatients'
+import { usePatient, usePatients } from '../../hooks/usePatients'
 
 export default function AdminPatientDetail() {
   const { id } = useParams<{ id: string }>()
   const patientId = Number(id)
   const navigate = useNavigate()
   const { data: patient } = usePatient(patientId)
+  const { data: patients } = usePatients()
   const [tab, setTab] = useState<'dashboard' | 'history'>('dashboard')
+
+  // Solo el Paciente 0 (protegido) tiene dashboard visible. El monitoreo del
+  // resto es privado: si llegan por URL directa, los devolvemos a la lista.
+  if (patients) {
+    const current = patients.find((p) => p.id === patientId)
+    if (!current || !current.is_protected) {
+      return <Navigate to="/admin" replace />
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-5">
