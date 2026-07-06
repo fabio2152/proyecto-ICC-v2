@@ -19,6 +19,19 @@ export function useLatestReading(patientId?: number) {
   })
 }
 
+export function useRecentReadings(limit: number, patientId?: number) {
+  return useQuery<Reading[]>({
+    queryKey: ['readings', 'recent', limit, patientId ?? 'demo'],
+    queryFn: async () => {
+      const { data } = await client.get<Reading[]>('/api/readings', {
+        params: { limit, ...(patientId ? { patient_id: patientId } : {}) },
+      })
+      return data // el backend las devuelve más recientes primero (orden desc)
+    },
+    refetchInterval: 3000,
+  })
+}
+
 export function useReadings(windowMinutes: number, patientId?: number) {
   return useQuery<Reading[]>({
     queryKey: ['readings', windowMinutes, patientId ?? 'demo'],

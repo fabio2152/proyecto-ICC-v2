@@ -1,6 +1,7 @@
 import { useStats } from '../hooks/useStats'
 import { useAllEvents } from '../hooks/useEvents'
 import ConditionsCatalog from '../components/history/ConditionsCatalog'
+import RawDataLog from '../components/history/RawDataLog'
 import { formatDate } from '../lib/utils'
 
 const EVENT_LABELS: Record<string, string> = {
@@ -68,6 +69,9 @@ export default function History({ patientId }: { patientId?: number }) {
           </div>
         )}
       </div>
+
+      {/* Registro de datos crudos recibidos por el API */}
+      <RawDataLog patientId={patientId} />
     </div>
   )
 }
