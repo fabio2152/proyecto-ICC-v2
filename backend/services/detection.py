@@ -5,6 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Reading, Event
 import os
 
+# Umbral de impacto para detección de caída (magnitud del acelerómetro en g).
+# Reposo ≈ 1g, caminar ≈ 1-1.5g, correr < 2g; un golpe/caída supera ~2.5g.
+FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.5"))
+
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
 TACHYCARDIA_BPM = float(os.getenv("TACHYCARDIA_BPM", "100"))
@@ -20,6 +24,15 @@ def classify_activity(accel_x: float, accel_y: float, accel_z: float) -> str:
     elif magnitude < 1.5:
         return "walking"
     return "running"
+
+
+def detect_fall_from_accel(accel_x: float, accel_y: float, accel_z: float) -> bool:
+    """Detección de caída en la plataforma: un pico de aceleración (impacto)
+    por encima del umbral. Simple y robusto — no depende del firmware del ESP32."""
+    if accel_x is None or accel_y is None or accel_z is None:
+        return False
+    magnitude = sqrt(accel_x**2 + accel_y**2 + accel_z**2)
+    return magnitude >= FALL_IMPACT_G
 
 
 async def _has_active_event(db: AsyncSession, device_id: int, event_type: str) -> bool:
@@ -53,7 +66,7 @@ async def run_detection(
             device_id=device_id,
             type="fall",
             severity="critical",
-            message="Caída detectada por el firmware del ESP32",
+            message="Caída detectada (impacto en el acelerómetro)",
             detected_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(event)
