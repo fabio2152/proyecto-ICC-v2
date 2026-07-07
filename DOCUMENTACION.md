@@ -222,7 +222,7 @@ Se calcula en el servidor a partir de los datos crudos del ESP32.
 **Eventos** (`services/detection.py`, ventanas móviles; sin duplicar eventos activos):
 | Evento | Condición | Lecturas | Severidad |
 |---|---|---|---|
-| `fall` | Detección en la plataforma: acelerómetro ≥ 2.5g **y** giroscopio ≥ 150°/s (impacto + rotación), **o** `fall_detected==true` del ESP32 | inmediato | critical |
+| `fall` | Detección en la plataforma: acelerómetro ≥ 4.0g **y** giroscopio ≥ 250°/s (impacto + rotación, muy por encima del estático ~1.2g/~70°/s), **o** `fall_detected==true` del ESP32 | inmediato | critical |
 | `low_spo2` | SpO₂ entre 0 y 92% | 12 (~60s) | critical |
 | `tachycardia` | FC > 100 BPM en reposo | 24 (~2min) | warning |
 | `bradycardia` | FC entre 0 y 50 BPM | 24 (~2min) | warning |

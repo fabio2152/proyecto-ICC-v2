@@ -8,8 +8,10 @@ import os
 # Detección de caída = impacto fuerte (acelerómetro) + rotación brusca (giroscopio),
 # a la vez. Una caída real combina ambos; así evitamos falsos positivos por solo
 # aceleración lineal. Umbrales configurables por .env.
-FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.5"))       # magnitud del acelerómetro (g)
-FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "150"))       # magnitud del giroscopio (°/s)
+# Umbrales muy por encima del estático real del ESP32 (accel ≤1.2g, gyro ≤70°/s):
+# solo se disparan con un movimiento brusco deliberado, nunca por casualidad.
+FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "4.0"))       # magnitud del acelerómetro (g)
+FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "250"))       # magnitud del giroscopio (°/s)
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
