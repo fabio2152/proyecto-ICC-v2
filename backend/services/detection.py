@@ -18,8 +18,8 @@ IMPACT_G = float(os.getenv("IMPACT_G", "3.0"))
 
 # Bandas de actividad. La banda de reposo es amplia para que el ruido del sensor en
 # estado quieto (≈1.1–1.2g) no salte a "caminando" todo el tiempo.
-REST_MAX_G = float(os.getenv("REST_MAX_G", "1.35"))            # < 1.35g → reposo
-WALK_MAX_G = float(os.getenv("WALK_MAX_G", "2.0"))             # 1.35–2.0g → caminando
+REST_MAX_G = float(os.getenv("REST_MAX_G", "1.25"))            # < 1.25g → reposo
+WALK_MAX_G = float(os.getenv("WALK_MAX_G", "2.0"))             # 1.25–2.0g → caminando
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
