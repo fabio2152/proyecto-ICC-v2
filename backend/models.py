@@ -110,6 +110,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[str] = mapped_column(String, nullable=False)  # 'admin' | 'patient'
+    name: Mapped[str | None] = mapped_column(String)  # nombre propio (usado por doctores)
     patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"))
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
 

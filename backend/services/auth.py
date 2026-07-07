@@ -57,27 +57,26 @@ async def create_patient_user(db: AsyncSession, patient: Patient) -> tuple[str, 
     return username, password
 
 
-# Contraseña fija para todas las cuentas de doctor (MVP).
+# Contraseña de la cuenta de doctor sembrada por defecto (MVP).
 DOCTOR_PASSWORD = "doctor123"
 
 # Cuentas fijas del sistema: la empresa y un doctor inicial (doctor1).
 # Se conserva el legacy admin/doctor como doctor por compatibilidad.
 CORE_USERS = [
-    ("empresa", "empresa123", "company"),
-    ("doctor1", DOCTOR_PASSWORD, "doctor"),
+    ("empresa", "empresa123", "company", None),
+    ("doctor1", DOCTOR_PASSWORD, "doctor", "Doctor Demo"),
 ]
 
 
-async def create_doctor_user(db: AsyncSession, username: str) -> tuple[str, str]:
-    """Crea una cuenta de doctor (contraseña fija DOCTOR_PASSWORD). Devuelve (username, password)."""
-    uname = username.strip().lower()
+async def create_doctor_user(db: AsyncSession, name: str, username: str, password: str) -> None:
+    """Crea una cuenta de doctor con nombre, usuario y contraseña definidos por la empresa."""
     db.add(User(
-        username=uname,
-        password_hash=hash_password(DOCTOR_PASSWORD),
+        username=username,
+        password_hash=hash_password(password),
         role="doctor",
+        name=name,
         patient_id=None,
     ))
-    return uname, DOCTOR_PASSWORD
 
 
 async def ensure_core_users(db: AsyncSession) -> None:
@@ -97,13 +96,14 @@ async def ensure_core_users(db: AsyncSession) -> None:
         changed = True
 
     # Empresa y doctor
-    for username, password, role in CORE_USERS:
+    for username, password, role, name in CORE_USERS:
         res = await db.execute(select(User).where(User.username == username))
         if res.scalars().first() is None:
             db.add(User(
                 username=username,
                 password_hash=hash_password(password),
                 role=role,
+                name=name,
                 patient_id=None,
             ))
             changed = True

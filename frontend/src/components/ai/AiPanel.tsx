@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, FileText, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react'
 import { useAiStatus, useAiAnalyze, type AiAnalysisType } from '../../hooks/useAi'
+import { renderSimpleMarkdown } from '../../lib/markdown'
 
 const ACTIONS: { type: AiAnalysisType; label: string; Icon: typeof FileText }[] = [
   { type: 'summary', label: 'Resumen clínico', Icon: FileText },
@@ -70,8 +71,8 @@ export default function AiPanel({ patientId }: { patientId?: number }) {
       )}
 
       {analyze.isSuccess && !analyze.isPending && (
-        <div className="rounded-lg bg-muted/30 border border-border p-4 text-sm leading-relaxed whitespace-pre-wrap">
-          {analyze.data}
+        <div className="rounded-lg bg-muted/30 border border-border p-4 text-sm leading-relaxed">
+          {renderSimpleMarkdown(analyze.data)}
         </div>
       )}
     </div>

@@ -60,3 +60,17 @@ export function useDeletePatient() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
   })
 }
+
+export interface PatientCredentialsInput {
+  username?: string
+  password?: string
+}
+
+export function useUpdatePatientCredentials() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number; input: PatientCredentialsInput }) =>
+      client.patch(`/api/patients/${id}/credentials`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
+  })
+}

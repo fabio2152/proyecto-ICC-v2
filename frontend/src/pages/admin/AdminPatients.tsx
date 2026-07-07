@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock, KeyRound } from 'lucide-react'
-import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../../hooks/usePatients'
+import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient, useUpdatePatientCredentials, type PatientCredentialsInput } from '../../hooks/usePatients'
 import { useDoctors, useAssignDoctor } from '../../hooks/useDoctors'
 import { useAuth } from '../../auth/AuthContext'
 import PatientForm from './PatientForm'
+import PatientCredentialsForm from './PatientCredentialsForm'
+import ChangePasswordModal from '../../components/ChangePasswordModal'
 import type { PatientListItem, PatientInput } from '../../types'
 
 function isConnected(lastSeen: string | null): boolean {
@@ -23,6 +25,7 @@ export default function AdminPatients() {
   const deleteMut = useDeletePatient()
   const { data: doctors } = useDoctors()
   const assignMut = useAssignDoctor()
+  const credentialsMut = useUpdatePatientCredentials()
 
   // Paciente: solo su fila. Médico: solo sus pacientes asignados. Empresa: todos.
   const patients = isPatient
@@ -33,11 +36,19 @@ export default function AdminPatients() {
 
   const showVitals = !isCompany  // la empresa NO ve datos clínicos del paciente
   const showDoctorCol = isCompany // solo la empresa gestiona la asignación de doctor
+  const showUsernameCol = isCompany // solo la empresa edita usuario/contraseña
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<PatientListItem | undefined>(undefined)
   const [confirmDelete, setConfirmDelete] = useState<PatientListItem | undefined>(undefined)
   const [createdCreds, setCreatedCreds] = useState<{ name: string; username: string; password: string } | null>(null)
+  const [editingCreds, setEditingCreds] = useState<PatientListItem | undefined>(undefined)
+  const [showOwnPasswordModal, setShowOwnPasswordModal] = useState(false)
+
+  function handleCredentialsSubmit(input: PatientCredentialsInput) {
+    if (!editingCreds) return
+    credentialsMut.mutate({ id: editingCreds.id, input }, { onSuccess: () => setEditingCreds(undefined) })
+  }
 
   function openCreate() {
     setEditing(undefined)
@@ -94,6 +105,7 @@ export default function AdminPatients() {
               <tr>
                 <th className="text-left font-medium px-4 py-3">Paciente</th>
                 <th className="text-left font-medium px-4 py-3">Edad</th>
+                {showUsernameCol && <th className="text-left font-medium px-4 py-3">Usuario</th>}
                 {showDoctorCol && <th className="text-left font-medium px-4 py-3">Doctor asignado</th>}
                 {showVitals && <th className="text-left font-medium px-4 py-3">Estado</th>}
                 {showVitals && <th className="text-left font-medium px-4 py-3">Últimos vitales</th>}
@@ -116,6 +128,9 @@ export default function AdminPatients() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.age ?? '—'}</td>
+                    {showUsernameCol && (
+                      <td className="px-4 py-3 text-muted-foreground">{p.username ?? '—'}</td>
+                    )}
                     {showDoctorCol && (
                       <td className="px-4 py-3">
                         <select
@@ -127,7 +142,9 @@ export default function AdminPatients() {
                         >
                           <option value="">Sin asignar</option>
                           {doctors?.map((d) => (
-                            <option key={d.username} value={d.username}>{d.username}</option>
+                            <option key={d.username} value={d.username}>
+                              {d.name ? `${d.name} (${d.username})` : d.username}
+                            </option>
                           ))}
                         </select>
                       </td>
@@ -169,6 +186,26 @@ export default function AdminPatients() {
                             <Pencil size={15} />
                           </button>
                         )}
+                        {/* La empresa edita usuario/contraseña de login del paciente. */}
+                        {isCompany && (
+                          <button
+                            onClick={() => setEditingCreds(p)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Editar usuario y contraseña"
+                          >
+                            <KeyRound size={15} />
+                          </button>
+                        )}
+                        {/* El paciente cambia solo su propia contraseña. */}
+                        {isPatient && (
+                          <button
+                            onClick={() => setShowOwnPasswordModal(true)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Cambiar mi contraseña"
+                          >
+                            <KeyRound size={15} />
+                          </button>
+                        )}
                         {/* Solo la empresa da de baja pacientes. */}
                         {isCompany && (
                           <button
@@ -197,6 +234,21 @@ export default function AdminPatients() {
           onSubmit={handleSubmit}
           saving={createMut.isPending || updateMut.isPending}
         />
+      )}
+
+      {editingCreds && (
+        <PatientCredentialsForm
+          patientName={editingCreds.name}
+          initialUsername={editingCreds.username ?? ''}
+          onClose={() => setEditingCreds(undefined)}
+          onSubmit={handleCredentialsSubmit}
+          saving={credentialsMut.isPending}
+          error={(credentialsMut.error as any)?.response?.data?.detail}
+        />
+      )}
+
+      {showOwnPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowOwnPasswordModal(false)} />
       )}
 
       {/* Credenciales generadas al crear un paciente (para la empresa) */}

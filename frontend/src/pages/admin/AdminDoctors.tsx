@@ -1,41 +1,37 @@
 import { useState } from 'react'
-import { UserPlus, Pencil, Trash2, Stethoscope, KeyRound, Check, X } from 'lucide-react'
-import { useDoctors, useCreateDoctor, useRenameDoctor, useDeleteDoctor } from '../../hooks/useDoctors'
+import { UserPlus, Pencil, Trash2, Stethoscope } from 'lucide-react'
+import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, type Doctor, type DoctorInput, type DoctorUpdateInput } from '../../hooks/useDoctors'
+import DoctorForm from './DoctorForm'
 
 export default function AdminDoctors() {
   const { data: doctors, isLoading } = useDoctors()
   const createMut = useCreateDoctor()
-  const renameMut = useRenameDoctor()
+  const updateMut = useUpdateDoctor()
   const deleteMut = useDeleteDoctor()
 
-  const [showCreate, setShowCreate] = useState(false)
-  const [newUsername, setNewUsername] = useState('')
-  const [createdCreds, setCreatedCreds] = useState<{ username: string; password: string } | null>(null)
-  const [editing, setEditing] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing] = useState<Doctor | undefined>(undefined)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  function create() {
-    const u = newUsername.trim()
-    if (!u) return
-    createMut.mutate(u, {
-      onSuccess: (res) => {
-        setShowCreate(false)
-        setNewUsername('')
-        setCreatedCreds({ username: res.data.username, password: res.data.password })
-      },
-    })
+  function openCreate() {
+    setEditing(undefined)
+    setShowForm(true)
+  }
+  function openEdit(d: Doctor) {
+    setEditing(d)
+    setShowForm(true)
   }
 
-  function startEdit(username: string) {
-    setEditing(username)
-    setEditValue(username)
+  function handleSubmit(input: DoctorInput | DoctorUpdateInput) {
+    if (editing) {
+      updateMut.mutate({ username: editing.username, input }, { onSuccess: () => setShowForm(false) })
+    } else {
+      createMut.mutate(input as DoctorInput, { onSuccess: () => setShowForm(false) })
+    }
   }
-  function saveEdit(username: string) {
-    const nv = editValue.trim()
-    if (!nv || nv === username) { setEditing(null); return }
-    renameMut.mutate({ username, newUsername: nv }, { onSuccess: () => setEditing(null) })
-  }
+
+  const saving = createMut.isPending || updateMut.isPending
+  const error = ((createMut.error ?? updateMut.error) as any)?.response?.data?.detail
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-5">
@@ -45,7 +41,7 @@ export default function AdminDoctors() {
           <p className="text-sm text-muted-foreground">Crea, edita y elimina las cuentas de doctor</p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={openCreate}
           className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
         >
           <UserPlus size={15} />
@@ -62,7 +58,8 @@ export default function AdminDoctors() {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <th className="text-left font-medium px-4 py-3">Doctor</th>
+                <th className="text-left font-medium px-4 py-3">Nombre</th>
+                <th className="text-left font-medium px-4 py-3">Usuario</th>
                 <th className="text-right font-medium px-4 py-3">Acciones</th>
               </tr>
             </thead>
@@ -72,39 +69,18 @@ export default function AdminDoctors() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Stethoscope size={14} className="text-primary" />
-                      {editing === d.username ? (
-                        <input
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          autoFocus
-                          className="bg-muted border border-border rounded-lg px-2 py-1 text-sm outline-none focus:border-primary/50"
-                        />
-                      ) : (
-                        <span className="font-medium">{d.username}</span>
-                      )}
+                      <span className="font-medium">{d.name ?? '—'}</span>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground">{d.username}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
-                      {editing === d.username ? (
-                        <>
-                          <button onClick={() => saveEdit(d.username)} className="p-1.5 rounded-lg hover:bg-muted text-green-400" title="Guardar">
-                            <Check size={15} />
-                          </button>
-                          <button onClick={() => setEditing(null)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground" title="Cancelar">
-                            <X size={15} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => startEdit(d.username)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground" title="Editar usuario">
-                            <Pencil size={15} />
-                          </button>
-                          <button onClick={() => setConfirmDelete(d.username)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive" title="Eliminar">
-                            <Trash2 size={15} />
-                          </button>
-                        </>
-                      )}
+                      <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground" title="Editar">
+                        <Pencil size={15} />
+                      </button>
+                      <button onClick={() => setConfirmDelete(d.username)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive" title="Eliminar">
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -114,56 +90,14 @@ export default function AdminDoctors() {
         </div>
       )}
 
-      {/* Crear doctor */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <Stethoscope size={18} className="text-primary" />
-              <h2 className="font-semibold">Nuevo doctor</h2>
-            </div>
-            <label className="text-xs text-muted-foreground mb-1 block">Usuario del doctor</label>
-            <input
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              placeholder="ej: doctor2"
-              autoFocus
-              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
-            />
-            <p className="text-xs text-muted-foreground mt-2">La contraseña será <strong>doctor123</strong>.</p>
-            {createMut.isError && (
-              <p className="text-xs text-destructive mt-2">
-                {(createMut.error as any)?.response?.data?.detail ?? 'No se pudo crear el doctor.'}
-              </p>
-            )}
-            <div className="flex gap-2 mt-4 justify-end">
-              <button onClick={() => { setShowCreate(false); setNewUsername('') }} className="px-4 py-2 text-sm rounded-lg bg-muted hover:bg-muted/80">Cancelar</button>
-              <button onClick={create} disabled={createMut.isPending || !newUsername.trim()} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50">
-                {createMut.isPending ? 'Creando...' : 'Crear doctor'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Credenciales del doctor creado */}
-      {createdCreds && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">
-            <div className="flex items-center gap-2 mb-3">
-              <KeyRound size={18} className="text-primary" />
-              <h2 className="font-semibold">Doctor creado</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-3">Entrégale estas credenciales:</p>
-            <div className="rounded-lg bg-muted/40 border border-border p-3 text-sm font-mono mb-4">
-              <div>usuario: <strong>{createdCreds.username}</strong></div>
-              <div>contraseña: <strong>{createdCreds.password}</strong></div>
-            </div>
-            <div className="flex justify-end">
-              <button onClick={() => setCreatedCreds(null)} className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90">Entendido</button>
-            </div>
-          </div>
-        </div>
+      {showForm && (
+        <DoctorForm
+          initial={editing}
+          onClose={() => setShowForm(false)}
+          onSubmit={handleSubmit}
+          saving={saving}
+          error={error}
+        />
       )}
 
       {/* Confirmar eliminación */}

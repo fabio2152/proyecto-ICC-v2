@@ -7,9 +7,10 @@ from database import get_db
 from models import Patient, Device, Reading, User, Session
 from schemas import (
     PatientOut, PatientCreate, PatientUpdate, PatientListItem, PatientCreatedOut, AssignDoctorIn,
+    PatientCredentialsUpdate, PatientCredentialsOut,
 )
 from deps import require_company, require_doctor
-from services.auth import create_patient_user, audit
+from services.auth import create_patient_user, hash_password, audit
 
 router = APIRouter()
 
@@ -54,6 +55,9 @@ async def list_patients(db: AsyncSession = Depends(get_db)):
                 last_hr = reading.heart_rate
                 last_spo2 = reading.spo2
 
+        user_result = await db.execute(select(User).where(User.patient_id == p.id))
+        patient_user = user_result.scalars().first()
+
         items.append(PatientListItem(
             id=p.id,
             name=p.name,
@@ -62,6 +66,7 @@ async def list_patients(db: AsyncSession = Depends(get_db)):
             device_key=device.device_key if device else None,
             is_protected=_is_protected(p.id),
             assigned_doctor=p.assigned_doctor,
+            username=patient_user.username if patient_user else None,
             last_seen=device.last_seen if device else None,
             last_heart_rate=last_hr,
             last_spo2=last_spo2,
@@ -159,6 +164,49 @@ async def assign_doctor(
     await db.refresh(patient)
     await audit(db, actor.username, "asignar_doctor", f"{patient.name} → {doctor_username or 'sin doctor'}")
     return patient
+
+
+@router.patch("/patients/{patient_id}/credentials", response_model=PatientCredentialsOut)
+async def update_patient_credentials(
+    patient_id: int,
+    payload: PatientCredentialsUpdate,
+    actor: Session = Depends(require_company),
+    db: AsyncSession = Depends(get_db),
+):
+    patient = await db.get(Patient, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    res = await db.execute(select(User).where(User.patient_id == patient_id))
+    user = res.scalars().first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario del paciente no encontrado")
+
+    changes: list[str] = []
+
+    if payload.username is not None:
+        new = payload.username.strip().lower()
+        if not new:
+            raise HTTPException(status_code=400, detail="El usuario no puede estar vacío")
+        if new != user.username:
+            clash = await db.execute(select(User).where(User.username == new))
+            if clash.scalars().first() is not None:
+                raise HTTPException(status_code=409, detail="Ese usuario ya existe")
+            old = user.username
+            user.username = new
+            for s in (await db.execute(select(Session).where(Session.username == old))).scalars().all():
+                s.username = new
+            changes.append("usuario")
+
+    if payload.password:
+        user.password_hash = hash_password(payload.password)
+        changes.append("contraseña")
+
+    if changes:
+        await db.commit()
+        await audit(db, actor.username, "editar_credenciales_paciente", f"{patient.name}: {', '.join(changes)}")
+
+    return PatientCredentialsOut(username=user.username)
 
 
 @router.delete("/patients/{patient_id}", status_code=204)

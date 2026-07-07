@@ -11,9 +11,12 @@ from services.auth import ensure_core_users, backfill_patient_users
 def _migrate_columns(sync_conn) -> None:
     """create_all no altera tablas existentes: agrega columnas nuevas si faltan (SQLite)."""
     insp = inspect(sync_conn)
-    cols = [c["name"] for c in insp.get_columns("patients")]
-    if "assigned_doctor" not in cols:
+    patient_cols = [c["name"] for c in insp.get_columns("patients")]
+    if "assigned_doctor" not in patient_cols:
         sync_conn.execute(text("ALTER TABLE patients ADD COLUMN assigned_doctor VARCHAR"))
+    user_cols = [c["name"] for c in insp.get_columns("users")]
+    if "name" not in user_cols:
+        sync_conn.execute(text("ALTER TABLE users ADD COLUMN name VARCHAR"))
 
 
 @asynccontextmanager

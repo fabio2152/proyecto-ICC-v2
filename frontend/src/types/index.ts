@@ -60,6 +60,7 @@ export interface PatientListItem {
   device_key: string | null
   is_protected: boolean
   assigned_doctor: string | null
+  username: string | null
   last_seen: string | null
   last_heart_rate: number | null
   last_spo2: number | null

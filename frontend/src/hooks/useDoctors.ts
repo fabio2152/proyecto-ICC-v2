@@ -3,11 +3,19 @@ import client from '../api/client'
 
 export interface Doctor {
   username: string
+  name: string | null
 }
 
-export interface DoctorCreated {
+export interface DoctorInput {
+  name: string
   username: string
   password: string
+}
+
+export interface DoctorUpdateInput {
+  name?: string
+  username?: string
+  password?: string
 }
 
 export function useDoctors() {
@@ -23,16 +31,16 @@ export function useDoctors() {
 export function useCreateDoctor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (username: string) => client.post<DoctorCreated>('/api/doctors', { username }),
+    mutationFn: (input: DoctorInput) => client.post<Doctor>('/api/doctors', input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['doctors'] }),
   })
 }
 
-export function useRenameDoctor() {
+export function useUpdateDoctor() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ username, newUsername }: { username: string; newUsername: string }) =>
-      client.patch(`/api/doctors/${username}`, { username: newUsername }),
+    mutationFn: ({ username, input }: { username: string; input: DoctorUpdateInput }) =>
+      client.patch<Doctor>(`/api/doctors/${username}`, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['doctors'] })
       qc.invalidateQueries({ queryKey: ['patients'] })

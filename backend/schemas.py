@@ -94,26 +94,41 @@ class PatientListItem(BaseModel):
     device_key: str | None
     is_protected: bool          # True = Paciente 0, no se puede eliminar
     assigned_doctor: str | None  # username del doctor asignado
+    username: str | None         # usuario de login del paciente
     last_seen: dt.datetime | None
     last_heart_rate: float | None
     last_spo2: float | None
 
 
+class PatientCredentialsUpdate(BaseModel):
+    username: str | None = None
+    password: str | None = None
+
+
+class PatientCredentialsOut(BaseModel):
+    username: str
+
+
+class ChangeOwnPasswordIn(BaseModel):
+    current_password: str
+    new_password: str
+
+
 class DoctorOut(BaseModel):
     username: str
+    name: str | None = None
 
 
 class DoctorCreate(BaseModel):
+    name: str
     username: str
+    password: str
 
 
 class DoctorUpdate(BaseModel):
-    username: str
-
-
-class DoctorCreatedOut(BaseModel):
-    username: str
-    password: str
+    name: str | None = None
+    username: str | None = None
+    password: str | None = None
 
 
 class AssignDoctorIn(BaseModel):

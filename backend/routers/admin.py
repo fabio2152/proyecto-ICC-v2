@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
 from models import User, Patient, Session
-from schemas import AdminLogin, AdminLoginResponse, MeOut
+from schemas import AdminLogin, AdminLoginResponse, MeOut, ChangeOwnPasswordIn
 from services.auth import (
     verify_password,
+    hash_password,
     create_session,
     delete_session,
     audit,
@@ -59,3 +60,25 @@ async def me(user: Session | None = Depends(get_current_user), db: AsyncSession 
         patient = await db.get(Patient, user.patient_id)
         name = patient.name if patient else None
     return MeOut(username=user.username, role=user.role, patient_id=user.patient_id, name=name)
+
+
+@router.post("/me/change-password", status_code=204)
+async def change_own_password(
+    payload: ChangeOwnPasswordIn,
+    user: Session | None = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if user is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    if user.role != "patient":
+        raise HTTPException(status_code=403, detail="Solo los pacientes pueden cambiar su propia contraseña")
+
+    res = await db.execute(select(User).where(User.username == user.username))
+    u = res.scalars().first()
+    if u is None or not verify_password(payload.current_password, u.password_hash):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+
+    u.password_hash = hash_password(payload.new_password)
+    await db.commit()
+    await audit(db, user.username, "cambiar_password_propia", None)
+    return None
