@@ -34,7 +34,7 @@ export default function AdminLogin() {
           <div className="p-3 rounded-2xl bg-primary/10 mb-3">
             <Activity size={28} className="text-primary" />
           </div>
-          <h1 className="text-xl font-semibold">Monitor Biométrico</h1>
+          <h1 className="text-xl font-semibold">VitalSOS</h1>
           <p className="text-sm text-muted-foreground mt-1">Inicia sesión para continuar</p>
         </div>
 

@@ -21,7 +21,7 @@ export default function AdminLayout() {
       <nav className="border-b border-border bg-card px-6 py-3 flex items-center gap-6">
         <div className="flex items-center gap-2 font-semibold text-primary">
           {isAdmin ? <Shield size={20} /> : <User size={20} />}
-          {isAdmin ? 'Administración' : 'Mi monitoreo'}
+          VitalSOS
         </div>
 
         <NavLink to="/admin" end className={linkClass}>
