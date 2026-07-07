@@ -1,0 +1,6 @@
+# Los scripts de shell y config de contenedores deben usar LF siempre,
+# aunque se clonen/editen en Windows (si no, el shebang se rompe en Linux/Docker).
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+nginx.conf text eol=lf
