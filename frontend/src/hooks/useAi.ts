@@ -32,7 +32,10 @@ export function useAiAnalyze(patientId?: number) {
       const { data } = await client.post<{ text: string }>(
         '/api/ai/analyze',
         { type },
-        { params: patientId ? { patient_id: patientId } : undefined },
+        {
+          params: patientId ? { patient_id: patientId } : undefined,
+          timeout: 60000, // Haiku puede tardar más que el timeout global de 5s
+        },
       )
       return data.text
     },
