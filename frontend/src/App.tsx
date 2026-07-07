@@ -7,7 +7,6 @@ import AdminLayout from './pages/admin/AdminLayout'
 import AdminPatients from './pages/admin/AdminPatients'
 import AdminPatientDetail from './pages/admin/AdminPatientDetail'
 import AdminConfig from './pages/admin/AdminConfig'
-import AdminAudit from './pages/admin/AdminAudit'
 
 export default function App() {
   return (
@@ -35,7 +34,6 @@ export default function App() {
             <Route index element={<AdminPatients />} />
             <Route path="patients/:id" element={<AdminPatientDetail />} />
             <Route path="config" element={<RequireAdmin><AdminConfig /></RequireAdmin>} />
-            <Route path="audit" element={<RequireAdmin><AdminAudit /></RequireAdmin>} />
           </Route>
         </Routes>
       </BrowserRouter>
