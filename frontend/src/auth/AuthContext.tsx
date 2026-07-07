@@ -15,7 +15,9 @@ interface AuthContextType {
   name: string | null
   username: string | null
   isAuthenticated: boolean
-  isAdmin: boolean
+  isCompany: boolean
+  isDoctor: boolean
+  isPatient: boolean
   login: (username: string, password: string) => Promise<LoginResult>
   logout: () => void
 }
@@ -84,7 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         name,
         username,
         isAuthenticated: token !== null,
-        isAdmin: role === 'admin',
+        isCompany: role === 'company',
+        isDoctor: role === 'doctor',
+        isPatient: role === 'patient',
         login,
         logout,
       }}

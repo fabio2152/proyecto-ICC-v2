@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock, KeyRound } from 'lucide-react'
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../../hooks/usePatients'
 import { useAuth } from '../../auth/AuthContext'
 import PatientForm from './PatientForm'
@@ -15,20 +15,23 @@ function isConnected(lastSeen: string | null): boolean {
 
 export default function AdminPatients() {
   const navigate = useNavigate()
-  const { isAdmin, patientId: myPatientId } = useAuth()
+  const { isCompany, isDoctor, isPatient, patientId: myPatientId } = useAuth()
   const { data: allPatients, isLoading } = usePatients()
   const createMut = useCreatePatient()
   const updateMut = useUpdatePatient()
   const deleteMut = useDeletePatient()
 
-  // El paciente solo ve su propia fila; el médico ve a todos.
-  const patients = isAdmin
-    ? allPatients
-    : allPatients?.filter((p) => p.id === myPatientId)
+  // El paciente solo ve su propia fila; empresa y médico ven a todos.
+  const patients = isPatient
+    ? allPatients?.filter((p) => p.id === myPatientId)
+    : allPatients
+
+  const showVitals = !isCompany // la empresa NO ve datos clínicos del paciente
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<PatientListItem | undefined>(undefined)
   const [confirmDelete, setConfirmDelete] = useState<PatientListItem | undefined>(undefined)
+  const [createdCreds, setCreatedCreds] = useState<{ name: string; username: string; password: string } | null>(null)
 
   function openCreate() {
     setEditing(undefined)
@@ -42,22 +45,30 @@ export default function AdminPatients() {
     if (editing) {
       updateMut.mutate({ id: editing.id, input }, { onSuccess: () => setShowForm(false) })
     } else {
-      createMut.mutate(input, { onSuccess: () => setShowForm(false) })
+      createMut.mutate(input, {
+        onSuccess: (res) => {
+          setShowForm(false)
+          setCreatedCreds({ name: res.data.name, username: res.data.username, password: res.data.password })
+        },
+      })
     }
   }
+
+  const title = isCompany ? 'Gestión de pacientes' : isPatient ? 'Mi cuenta' : 'Pacientes'
+  const subtitle = isCompany
+    ? 'Alta y baja de pacientes (la empresa no accede a los datos clínicos)'
+    : isPatient
+    ? 'Entra a tu monitoreo con el botón de ver'
+    : 'Consulta y edición de todos los pacientes'
 
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">{isAdmin ? 'Pacientes' : 'Mi cuenta'}</h1>
-          <p className="text-sm text-muted-foreground">
-            {isAdmin
-              ? 'Gestión de todos los pacientes monitorizados'
-              : 'Entra a tu monitoreo con el botón de ver'}
-          </p>
+          <h1 className="text-xl font-semibold">{title}</h1>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        {isAdmin && (
+        {isCompany && (
           <button
             onClick={openCreate}
             className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
@@ -77,8 +88,8 @@ export default function AdminPatients() {
               <tr>
                 <th className="text-left font-medium px-4 py-3">Paciente</th>
                 <th className="text-left font-medium px-4 py-3">Edad</th>
-                <th className="text-left font-medium px-4 py-3">Estado</th>
-                <th className="text-left font-medium px-4 py-3">Últimos vitales</th>
+                {showVitals && <th className="text-left font-medium px-4 py-3">Estado</th>}
+                {showVitals && <th className="text-left font-medium px-4 py-3">Últimos vitales</th>}
                 <th className="text-right font-medium px-4 py-3">Acciones</th>
               </tr>
             </thead>
@@ -98,44 +109,53 @@ export default function AdminPatients() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.age ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 text-xs ${connected ? 'text-green-400' : 'text-muted-foreground'}`}>
-                        {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-                        {connected ? 'Conectado' : 'Sin señal'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {p.last_heart_rate != null
-                        ? `${Math.round(p.last_heart_rate)} BPM · ${p.last_spo2?.toFixed(0)}%`
-                        : '—'}
-                    </td>
+                    {showVitals && (
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 text-xs ${connected ? 'text-green-400' : 'text-muted-foreground'}`}>
+                          {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                          {connected ? 'Conectado' : 'Sin señal'}
+                        </span>
+                      </td>
+                    )}
+                    {showVitals && (
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {p.last_heart_rate != null
+                          ? `${Math.round(p.last_heart_rate)} BPM · ${p.last_spo2?.toFixed(0)}%`
+                          : '—'}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => navigate(`/admin/patients/${p.id}`)}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                          title="Ver monitoreo del paciente"
-                        >
-                          <Eye size={15} />
-                        </button>
-                        {isAdmin && (
-                          <>
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                              title="Editar"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => setConfirmDelete(p)}
-                              disabled={p.is_protected}
-                              className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-                              title={p.is_protected ? 'No se puede eliminar el Paciente 0' : 'Eliminar'}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </>
+                        {/* Médico y paciente pueden ver el monitoreo; la empresa no. */}
+                        {(isDoctor || isPatient) && (
+                          <button
+                            onClick={() => navigate(`/admin/patients/${p.id}`)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Ver monitoreo del paciente"
+                          >
+                            <Eye size={15} />
+                          </button>
+                        )}
+                        {/* Solo el médico edita los detalles/condiciones. */}
+                        {isDoctor && (
+                          <button
+                            onClick={() => openEdit(p)}
+                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                            title="Editar"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        )}
+                        {/* Solo la empresa da de baja pacientes. */}
+                        {isCompany && (
+                          <button
+                            onClick={() => setConfirmDelete(p)}
+                            disabled={p.is_protected}
+                            className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                            title={p.is_protected ? 'No se puede eliminar el Paciente 0' : 'Eliminar'}
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -154,6 +174,34 @@ export default function AdminPatients() {
           onSubmit={handleSubmit}
           saving={createMut.isPending || updateMut.isPending}
         />
+      )}
+
+      {/* Credenciales generadas al crear un paciente (para la empresa) */}
+      {createdCreds && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <KeyRound size={18} className="text-primary" />
+              <h2 className="font-semibold">Paciente creado</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Se creó la cuenta de <strong className="text-foreground">{createdCreds.name}</strong>.
+              Entrégale estas credenciales:
+            </p>
+            <div className="rounded-lg bg-muted/40 border border-border p-3 text-sm font-mono mb-4">
+              <div>usuario: <strong>{createdCreds.username}</strong></div>
+              <div>contraseña: <strong>{createdCreds.password}</strong></div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setCreatedCreds(null)}
+                className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {confirmDelete && (

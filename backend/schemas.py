@@ -69,6 +69,16 @@ class PatientCreate(BaseModel):
     diagnosis: str | None = None
 
 
+class PatientCreatedOut(BaseModel):
+    """Respuesta al crear un paciente: incluye las credenciales generadas."""
+    id: int
+    name: str
+    age: int | None
+    diagnosis: str | None
+    username: str
+    password: str
+
+
 class PatientUpdate(BaseModel):
     name: str | None = None
     age: int | None = None

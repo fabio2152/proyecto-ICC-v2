@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models import Patient, Device, Reading, User, Session
-from schemas import PatientOut, PatientCreate, PatientUpdate, PatientListItem
-from deps import require_admin
+from schemas import PatientOut, PatientCreate, PatientUpdate, PatientListItem, PatientCreatedOut
+from deps import require_company, require_doctor
 from services.auth import create_patient_user, audit
 
 router = APIRouter()
@@ -74,10 +74,10 @@ async def get_patient(patient_id: int, db: AsyncSession = Depends(get_db)):
     return patient
 
 
-@router.post("/patients", response_model=PatientOut, status_code=201)
+@router.post("/patients", response_model=PatientCreatedOut, status_code=201)
 async def create_patient(
     payload: PatientCreate,
-    admin: Session = Depends(require_admin),
+    actor: Session = Depends(require_company),
     db: AsyncSession = Depends(get_db),
 ):
     patient = Patient(name=payload.name, age=payload.age, diagnosis=payload.diagnosis)
@@ -93,19 +93,26 @@ async def create_patient(
     db.add(device)
 
     # Crear también el usuario del paciente (username = primer nombre, pass = <usuario>123)
-    username, _password = await create_patient_user(db, patient)
+    username, password = await create_patient_user(db, patient)
 
     await db.commit()
     await db.refresh(patient)
-    await audit(db, admin.username, "crear_paciente", f"{patient.name} (usuario: {username})")
-    return patient
+    await audit(db, actor.username, "crear_paciente", f"{patient.name} (usuario: {username})")
+    return PatientCreatedOut(
+        id=patient.id,
+        name=patient.name,
+        age=patient.age,
+        diagnosis=patient.diagnosis,
+        username=username,
+        password=password,
+    )
 
 
 @router.patch("/patients/{patient_id}", response_model=PatientOut)
 async def update_patient(
     patient_id: int,
     payload: PatientUpdate,
-    admin: Session = Depends(require_admin),
+    actor: Session = Depends(require_doctor),
     db: AsyncSession = Depends(get_db),
 ):
     patient = await db.get(Patient, patient_id)
@@ -121,14 +128,14 @@ async def update_patient(
 
     await db.commit()
     await db.refresh(patient)
-    await audit(db, admin.username, "editar_paciente", f"{patient.name} (#{patient.id})")
+    await audit(db, actor.username, "editar_paciente", f"{patient.name} (#{patient.id})")
     return patient
 
 
 @router.delete("/patients/{patient_id}", status_code=204)
 async def delete_patient(
     patient_id: int,
-    admin: Session = Depends(require_admin),
+    actor: Session = Depends(require_company),
     db: AsyncSession = Depends(get_db),
 ):
     if _is_protected(patient_id):
@@ -177,5 +184,5 @@ async def delete_patient(
     patient_name = patient.name
     await db.delete(patient)
     await db.commit()
-    await audit(db, admin.username, "eliminar_paciente", f"{patient_name} (#{patient_id})")
+    await audit(db, actor.username, "eliminar_paciente", f"{patient_name} (#{patient_id})")
     return None

@@ -57,15 +57,49 @@ async def create_patient_user(db: AsyncSession, patient: Patient) -> tuple[str, 
     return username, password
 
 
-async def ensure_admin_user(db: AsyncSession) -> None:
+# Cuentas fijas del sistema: 1 empresa y 1 doctor (más el legacy admin como doctor).
+CORE_USERS = [
+    ("empresa", "empresa123", "company"),
+    ("doctor", "doctor123", "doctor"),
+]
+
+
+async def ensure_core_users(db: AsyncSession) -> None:
+    """Crea/asegura las cuentas de empresa y doctor (idempotente).
+
+    Migra el legacy 'admin' (rol 'admin') a rol 'doctor' para que siga sirviendo
+    como cuenta del médico.
+    """
+    changed = False
+
+    # Legacy admin → doctor
     res = await db.execute(select(User).where(User.username == ADMIN_USERNAME))
-    if res.scalars().first() is None:
+    admin = res.scalars().first()
+    if admin is None:
         db.add(User(
             username=ADMIN_USERNAME,
             password_hash=hash_password(ADMIN_PASSWORD),
-            role="admin",
+            role="doctor",
             patient_id=None,
         ))
+        changed = True
+    elif admin.role != "doctor":
+        admin.role = "doctor"
+        changed = True
+
+    # Empresa y doctor
+    for username, password, role in CORE_USERS:
+        res = await db.execute(select(User).where(User.username == username))
+        if res.scalars().first() is None:
+            db.add(User(
+                username=username,
+                password_hash=hash_password(password),
+                role=role,
+                patient_id=None,
+            ))
+            changed = True
+
+    if changed:
         await db.commit()
 
 

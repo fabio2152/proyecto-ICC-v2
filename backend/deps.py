@@ -30,13 +30,20 @@ async def get_current_user(
     return await db.get(Session, token)
 
 
-async def require_admin(user: Session | None = Depends(get_current_user)) -> Session:
-    """Exige una sesión con rol admin (médico). 401 si no; 403 si no es admin."""
-    if user is None:
-        raise HTTPException(status_code=401, detail="No autenticado")
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Requiere permisos de administrador")
-    return user
+def require_roles(*roles: str):
+    """Crea una dependencia que exige una sesión con alguno de los roles dados."""
+    async def dep(user: Session | None = Depends(get_current_user)) -> Session:
+        if user is None:
+            raise HTTPException(status_code=401, detail="No autenticado")
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="No tienes permiso para esta acción")
+        return user
+    return dep
+
+
+# Empresa: crea/elimina pacientes (no ve datos). Doctor: ve y edita todo.
+require_company = require_roles("company")
+require_doctor = require_roles("doctor")
 
 
 async def resolve_patient_id(db: AsyncSession, patient_id: int | None) -> int:

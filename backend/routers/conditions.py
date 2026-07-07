@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models import PatientCondition, Session
 from schemas import PatientConditionOut, PatientConditionIn
-from deps import resolve_patient_id, require_admin
+from deps import resolve_patient_id, require_doctor
 from services.auth import audit
 
 router = APIRouter()
@@ -28,7 +28,7 @@ async def get_conditions(
 async def add_condition(
     payload: PatientConditionIn,
     patient_id: int | None = Query(None),
-    admin: Session = Depends(require_admin),
+    admin: Session = Depends(require_doctor),
     db: AsyncSession = Depends(get_db),
 ):
     pid = await resolve_patient_id(db, patient_id)
@@ -62,7 +62,7 @@ async def add_condition(
 async def delete_condition(
     condition_id: str,
     patient_id: int | None = Query(None),
-    admin: Session = Depends(require_admin),
+    admin: Session = Depends(require_doctor),
     db: AsyncSession = Depends(get_db),
 ):
     pid = await resolve_patient_id(db, patient_id)

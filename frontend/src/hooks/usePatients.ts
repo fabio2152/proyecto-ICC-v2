@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '../api/client'
 import type { PatientListItem, PatientInput, Patient } from '../types'
 
+export interface PatientCreated {
+  id: number
+  name: string
+  age: number | null
+  diagnosis: string | null
+  username: string
+  password: string
+}
+
 export function usePatients() {
   return useQuery<PatientListItem[]>({
     queryKey: ['patients'],
@@ -27,7 +36,7 @@ export function usePatient(patientId: number | undefined) {
 export function useCreatePatient() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: PatientInput) => client.post<Patient>('/api/patients', input),
+    mutationFn: (input: PatientInput) => client.post<PatientCreated>('/api/patients', input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['patients'] }),
   })
 }

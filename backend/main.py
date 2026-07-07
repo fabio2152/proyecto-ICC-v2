@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base, SessionLocal
 from routers import ingest, readings, events, patients, history, stats, admin, conditions, ai, audit
-from services.auth import ensure_admin_user, backfill_patient_users
+from services.auth import ensure_core_users, backfill_patient_users
 
 
 @asynccontextmanager
@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     # Asegurar usuario admin y crear usuarios para pacientes existentes (idempotente)
     async with SessionLocal() as db:
-        await ensure_admin_user(db)
+        await ensure_core_users(db)
         await backfill_patient_users(db)
     yield
 

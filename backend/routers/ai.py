@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from deps import resolve_device, require_admin
+from deps import resolve_device, require_doctor
 from models import Session
 from schemas import AiConfigIn, AiStatusOut, AiAnalyzeIn, AiAnalyzeOut
 from services.ai import get_api_key, set_api_key, run_analysis
@@ -20,7 +20,7 @@ async def ai_status(db: AsyncSession = Depends(get_db)):
 @router.post("/ai/config", response_model=AiStatusOut)
 async def ai_config(
     payload: AiConfigIn,
-    admin: Session = Depends(require_admin),
+    admin: Session = Depends(require_doctor),
     db: AsyncSession = Depends(get_db),
 ):
     await set_api_key(db, payload.api_key.strip())

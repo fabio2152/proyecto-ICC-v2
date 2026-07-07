@@ -10,12 +10,13 @@ export default function AdminPatientDetail() {
   const { id } = useParams<{ id: string }>()
   const patientId = Number(id)
   const navigate = useNavigate()
-  const { isAdmin, patientId: myPatientId } = useAuth()
+  const { isDoctor, isPatient, patientId: myPatientId } = useAuth()
   const { data: patient } = usePatient(patientId)
   const [tab, setTab] = useState<'dashboard' | 'history'>('dashboard')
 
-  // Un paciente solo puede ver su propio monitoreo; si intenta otro, lo devolvemos.
-  if (!isAdmin && patientId !== myPatientId) {
+  // La empresa no accede a datos clínicos. El médico ve a cualquiera.
+  // El paciente solo puede ver su propio monitoreo.
+  if (!isDoctor && !(isPatient && patientId === myPatientId)) {
     return <Navigate to="/admin" replace />
   }
 
