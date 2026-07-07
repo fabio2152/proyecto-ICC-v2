@@ -79,7 +79,7 @@ async def run_detection(
             device_id=device_id,
             type="fall",
             severity="critical",
-            message="Caída detectada (impacto en el acelerómetro)",
+            message="SOS — Emergencia: posible caída, requiere atención inmediata",
             detected_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
         db.add(event)

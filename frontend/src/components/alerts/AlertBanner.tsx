@@ -3,7 +3,7 @@ import { useActiveEvents, useAcknowledgeEvent } from '../../hooks/useEvents'
 import type { Event } from '../../types'
 
 const EVENT_LABELS: Record<string, string> = {
-  fall: 'Caída detectada',
+  fall: '🆘 SOS — Alerta de emergencia',
   low_spo2: 'SpO₂ baja',
   tachycardia: 'Taquicardia',
   bradycardia: 'Bradicardia',

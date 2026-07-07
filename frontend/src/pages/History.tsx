@@ -7,7 +7,7 @@ import RawDataLog from '../components/history/RawDataLog'
 import { formatDate } from '../lib/utils'
 
 const EVENT_LABELS: Record<string, string> = {
-  fall: 'Caída', low_spo2: 'SpO₂ baja', tachycardia: 'Taquicardia',
+  fall: '🆘 SOS — Emergencia', low_spo2: 'SpO₂ baja', tachycardia: 'Taquicardia',
   bradycardia: 'Bradicardia',
 }
 
