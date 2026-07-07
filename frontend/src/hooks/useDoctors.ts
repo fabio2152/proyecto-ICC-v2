@@ -28,6 +28,29 @@ export function useCreateDoctor() {
   })
 }
 
+export function useRenameDoctor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ username, newUsername }: { username: string; newUsername: string }) =>
+      client.patch(`/api/doctors/${username}`, { username: newUsername }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['doctors'] })
+      qc.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
+export function useDeleteDoctor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (username: string) => client.delete(`/api/doctors/${username}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['doctors'] })
+      qc.invalidateQueries({ queryKey: ['patients'] })
+    },
+  })
+}
+
 export function useAssignDoctor() {
   const qc = useQueryClient()
   return useMutation({

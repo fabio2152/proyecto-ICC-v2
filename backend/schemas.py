@@ -107,6 +107,10 @@ class DoctorCreate(BaseModel):
     username: str
 
 
+class DoctorUpdate(BaseModel):
+    username: str
+
+
 class DoctorCreatedOut(BaseModel):
     username: str
     password: str

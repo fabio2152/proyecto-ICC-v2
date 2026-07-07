@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
-import { Shield, LogOut, Users, Settings, User, Building2 } from 'lucide-react'
+import { Shield, LogOut, Users, Settings, User, Building2, Stethoscope } from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
 
 export default function AdminLayout() {
@@ -32,6 +32,13 @@ export default function AdminLayout() {
           <Users size={15} />
           {patientsLabel}
         </NavLink>
+
+        {isCompany && (
+          <NavLink to="/admin/doctors" className={linkClass}>
+            <Stethoscope size={15} />
+            Doctores
+          </NavLink>
+        )}
 
         {isDoctor && (
           <NavLink to="/admin/config" className={linkClass}>
