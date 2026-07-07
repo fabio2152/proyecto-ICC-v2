@@ -143,7 +143,7 @@ export default function AdminPatients() {
                           <option value="">Sin asignar</option>
                           {doctors?.map((d) => (
                             <option key={d.username} value={d.username}>
-                              {d.name ? `${d.name} (${d.username})` : d.username}
+                              {d.name ?? d.username}
                             </option>
                           ))}
                         </select>
