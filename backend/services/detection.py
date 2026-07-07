@@ -5,13 +5,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Reading, Event
 import os
 
-# Detección de caída = impacto fuerte (acelerómetro) + rotación brusca (giroscopio),
-# a la vez. Una caída real combina ambos; así evitamos falsos positivos por solo
-# aceleración lineal. Umbrales configurables por .env.
-# Umbrales muy por encima del estático real del ESP32 (accel ≤1.2g, gyro ≤70°/s):
-# solo se disparan con un movimiento brusco deliberado, nunca por casualidad.
-FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "4.0"))       # magnitud del acelerómetro (g)
-FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "250"))       # magnitud del giroscopio (°/s)
+# Detección de caída = impacto (acelerómetro) + rotación (giroscopio) a la vez.
+# Una caída real combina ambos; el AND evita falsos positivos por solo aceleración.
+# Umbrales por encima del estático real del ESP32 (accel ≤1.2g, gyro ≤70°/s) pero
+# ahora más sensibles: basta un impacto vertical moderado y una caída no tan rápida.
+FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "1.8"))       # magnitud del acelerómetro (g)
+FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "100"))       # magnitud del giroscopio (°/s)
+
+# Golpe muy fuerte: no es locomoción sostenida, se trata como reposo para no marcar
+# "corriendo" durante un impacto. Independiente del umbral de caída.
+IMPACT_G = float(os.getenv("IMPACT_G", "3.0"))
+
+# Bandas de actividad. La banda de reposo es amplia para que el ruido del sensor en
+# estado quieto (≈1.1–1.2g) no salte a "caminando" todo el tiempo.
+REST_MAX_G = float(os.getenv("REST_MAX_G", "1.35"))            # < 1.35g → reposo
+WALK_MAX_G = float(os.getenv("WALK_MAX_G", "2.0"))             # 1.35–2.0g → caminando
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
@@ -23,13 +31,13 @@ BRADYCARDIA_CONSECUTIVE = int(os.getenv("BRADYCARDIA_CONSECUTIVE", "24"))
 
 def classify_activity(accel_x: float, accel_y: float, accel_z: float) -> str:
     magnitude = sqrt(accel_x**2 + accel_y**2 + accel_z**2)
-    # Un pico de impacto (caída) no es locomoción sostenida: no lo marcamos como
+    # Un golpe/impacto fuerte no es locomoción sostenida: no lo marcamos como
     # "corriendo" para no contradecir el evento de caída.
-    if magnitude >= FALL_IMPACT_G:
+    if magnitude >= IMPACT_G:
         return "rest"
-    if magnitude < 1.05:
+    if magnitude < REST_MAX_G:
         return "rest"
-    elif magnitude < 1.5:
+    elif magnitude < WALK_MAX_G:
         return "walking"
     return "running"
 
