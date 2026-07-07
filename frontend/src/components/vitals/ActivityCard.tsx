@@ -7,7 +7,7 @@ interface Props {
 
 const ACTIVITY_MAP = {
   rest:    { label: 'Reposo',    sub: 'Normal',           Icon: Bed,       color: 'text-blue-400',   ring: 'bg-blue-400/10' },
-  walking: { label: 'Caminando', sub: 'Actividad leve',   Icon: Footprints, color: 'text-green-400',  ring: 'bg-green-400/10' },
+  walking: { label: 'Caminando', sub: 'Actividad leve',   Icon: Footprints, color: 'text-foreground',  ring: 'bg-muted' },
   running: { label: 'Corriendo', sub: 'Actividad intensa', Icon: Zap,       color: 'text-orange-400', ring: 'bg-orange-400/10' },
 }
 

@@ -17,7 +17,7 @@ export default function SpO2Card({ reading }: Props) {
     spo2 === null
       ? 'text-muted-foreground'
       : spo2 >= 95
-      ? 'text-green-400'
+      ? 'text-foreground' // Normal en blanco, igual que la Frecuencia Cardíaca
       : spo2 >= 92
       ? 'text-yellow-400'
       : 'text-red-400'
