@@ -11,6 +11,7 @@ class Patient(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     age: Mapped[int | None] = mapped_column(Integer)
     diagnosis: Mapped[str | None] = mapped_column(String)
+    assigned_doctor: Mapped[str | None] = mapped_column(String)  # username del doctor asignado
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
 
     devices: Mapped[list["Device"]] = relationship(back_populates="patient")

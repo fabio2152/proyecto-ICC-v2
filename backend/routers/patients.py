@@ -5,7 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models import Patient, Device, Reading, User, Session
-from schemas import PatientOut, PatientCreate, PatientUpdate, PatientListItem, PatientCreatedOut
+from schemas import (
+    PatientOut, PatientCreate, PatientUpdate, PatientListItem, PatientCreatedOut, AssignDoctorIn,
+)
 from deps import require_company, require_doctor
 from services.auth import create_patient_user, audit
 
@@ -59,6 +61,7 @@ async def list_patients(db: AsyncSession = Depends(get_db)):
             diagnosis=p.diagnosis,
             device_key=device.device_key if device else None,
             is_protected=_is_protected(p.id),
+            assigned_doctor=p.assigned_doctor,
             last_seen=device.last_seen if device else None,
             last_heart_rate=last_hr,
             last_spo2=last_spo2,
@@ -129,6 +132,32 @@ async def update_patient(
     await db.commit()
     await db.refresh(patient)
     await audit(db, actor.username, "editar_paciente", f"{patient.name} (#{patient.id})")
+    return patient
+
+
+@router.patch("/patients/{patient_id}/assign", response_model=PatientOut)
+async def assign_doctor(
+    patient_id: int,
+    payload: AssignDoctorIn,
+    actor: Session = Depends(require_company),
+    db: AsyncSession = Depends(get_db),
+):
+    patient = await db.get(Patient, patient_id)
+    if patient is None:
+        raise HTTPException(status_code=404, detail="Paciente no encontrado")
+
+    doctor_username = payload.doctor.strip().lower() if payload.doctor else None
+    if doctor_username:
+        res = await db.execute(
+            select(User).where(User.username == doctor_username, User.role == "doctor")
+        )
+        if res.scalars().first() is None:
+            raise HTTPException(status_code=400, detail="Doctor no encontrado")
+
+    patient.assigned_doctor = doctor_username
+    await db.commit()
+    await db.refresh(patient)
+    await audit(db, actor.username, "asignar_doctor", f"{patient.name} → {doctor_username or 'sin doctor'}")
     return patient
 
 

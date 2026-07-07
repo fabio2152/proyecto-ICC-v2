@@ -2,16 +2,26 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from sqlalchemy import inspect, text
 from database import engine, Base, SessionLocal
-from routers import ingest, readings, events, patients, history, stats, admin, conditions, ai, audit
+from routers import ingest, readings, events, patients, history, stats, admin, conditions, ai, audit, doctors
 from services.auth import ensure_core_users, backfill_patient_users
+
+
+def _migrate_columns(sync_conn) -> None:
+    """create_all no altera tablas existentes: agrega columnas nuevas si faltan (SQLite)."""
+    insp = inspect(sync_conn)
+    cols = [c["name"] for c in insp.get_columns("patients")]
+    if "assigned_doctor" not in cols:
+        sync_conn.execute(text("ALTER TABLE patients ADD COLUMN assigned_doctor VARCHAR"))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    # Asegurar usuario admin y crear usuarios para pacientes existentes (idempotente)
+        await conn.run_sync(_migrate_columns)
+    # Asegurar cuentas core y crear usuarios para pacientes existentes (idempotente)
     async with SessionLocal() as db:
         await ensure_core_users(db)
         await backfill_patient_users(db)
@@ -38,6 +48,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(conditions.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
+app.include_router(doctors.router, prefix="/api")
 
 
 @app.get("/")

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock, KeyRound } from 'lucide-react'
+import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock, KeyRound, UserPlus, Stethoscope } from 'lucide-react'
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../../hooks/usePatients'
+import { useDoctors, useCreateDoctor, useAssignDoctor } from '../../hooks/useDoctors'
 import { useAuth } from '../../auth/AuthContext'
 import PatientForm from './PatientForm'
 import type { PatientListItem, PatientInput } from '../../types'
@@ -15,23 +16,43 @@ function isConnected(lastSeen: string | null): boolean {
 
 export default function AdminPatients() {
   const navigate = useNavigate()
-  const { isCompany, isDoctor, isPatient, patientId: myPatientId } = useAuth()
+  const { isCompany, isDoctor, isPatient, patientId: myPatientId, username } = useAuth()
   const { data: allPatients, isLoading } = usePatients()
   const createMut = useCreatePatient()
   const updateMut = useUpdatePatient()
   const deleteMut = useDeletePatient()
+  const { data: doctors } = useDoctors()
+  const createDoctorMut = useCreateDoctor()
+  const assignMut = useAssignDoctor()
 
-  // El paciente solo ve su propia fila; empresa y médico ven a todos.
+  // Paciente: solo su fila. Médico: solo sus pacientes asignados. Empresa: todos.
   const patients = isPatient
     ? allPatients?.filter((p) => p.id === myPatientId)
+    : isDoctor
+    ? allPatients?.filter((p) => p.assigned_doctor === username)
     : allPatients
 
-  const showVitals = !isCompany // la empresa NO ve datos clínicos del paciente
+  const showVitals = !isCompany  // la empresa NO ve datos clínicos del paciente
+  const showDoctorCol = isCompany // solo la empresa gestiona la asignación de doctor
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<PatientListItem | undefined>(undefined)
   const [confirmDelete, setConfirmDelete] = useState<PatientListItem | undefined>(undefined)
   const [createdCreds, setCreatedCreds] = useState<{ name: string; username: string; password: string } | null>(null)
+  const [showDoctorForm, setShowDoctorForm] = useState(false)
+  const [doctorUsername, setDoctorUsername] = useState('')
+
+  function createDoctor() {
+    const u = doctorUsername.trim()
+    if (!u) return
+    createDoctorMut.mutate(u, {
+      onSuccess: (res) => {
+        setShowDoctorForm(false)
+        setDoctorUsername('')
+        setCreatedCreds({ name: res.data.username, username: res.data.username, password: res.data.password })
+      },
+    })
+  }
 
   function openCreate() {
     setEditing(undefined)
@@ -69,13 +90,22 @@ export default function AdminPatients() {
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
         {isCompany && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
-          >
-            <Plus size={15} />
-            Nuevo paciente
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDoctorForm(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg border border-border hover:bg-muted/40"
+            >
+              <UserPlus size={15} />
+              Nuevo doctor
+            </button>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+            >
+              <Plus size={15} />
+              Nuevo paciente
+            </button>
+          </div>
         )}
       </div>
 
@@ -88,6 +118,7 @@ export default function AdminPatients() {
               <tr>
                 <th className="text-left font-medium px-4 py-3">Paciente</th>
                 <th className="text-left font-medium px-4 py-3">Edad</th>
+                {showDoctorCol && <th className="text-left font-medium px-4 py-3">Doctor asignado</th>}
                 {showVitals && <th className="text-left font-medium px-4 py-3">Estado</th>}
                 {showVitals && <th className="text-left font-medium px-4 py-3">Últimos vitales</th>}
                 <th className="text-right font-medium px-4 py-3">Acciones</th>
@@ -109,6 +140,22 @@ export default function AdminPatients() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.age ?? '—'}</td>
+                    {showDoctorCol && (
+                      <td className="px-4 py-3">
+                        <select
+                          value={p.assigned_doctor ?? ''}
+                          onChange={(e) =>
+                            assignMut.mutate({ patientId: p.id, doctor: e.target.value || null })
+                          }
+                          className="bg-muted/40 border border-border rounded-lg px-2 py-1 text-xs outline-none focus:border-primary/40"
+                        >
+                          <option value="">Sin asignar</option>
+                          {doctors?.map((d) => (
+                            <option key={d.username} value={d.username}>{d.username}</option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
                     {showVitals && (
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 text-xs ${connected ? 'text-green-400' : 'text-muted-foreground'}`}>
@@ -176,7 +223,45 @@ export default function AdminPatients() {
         />
       )}
 
-      {/* Credenciales generadas al crear un paciente (para la empresa) */}
+      {/* Alta de doctor (empresa) */}
+      {showDoctorForm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Stethoscope size={18} className="text-primary" />
+              <h2 className="font-semibold">Nuevo doctor</h2>
+            </div>
+            <label className="text-xs text-muted-foreground mb-1 block">Usuario del doctor</label>
+            <input
+              value={doctorUsername}
+              onChange={(e) => setDoctorUsername(e.target.value)}
+              placeholder="ej: doctor1"
+              autoFocus
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+            />
+            <p className="text-xs text-muted-foreground mt-2">La contraseña será <strong>doctor123</strong>.</p>
+            {createDoctorMut.isError && (
+              <p className="text-xs text-destructive mt-2">
+                {(createDoctorMut.error as any)?.response?.data?.detail ?? 'No se pudo crear el doctor.'}
+              </p>
+            )}
+            <div className="flex gap-2 mt-4 justify-end">
+              <button onClick={() => { setShowDoctorForm(false); setDoctorUsername('') }} className="px-4 py-2 text-sm rounded-lg bg-muted hover:bg-muted/80">
+                Cancelar
+              </button>
+              <button
+                onClick={createDoctor}
+                disabled={createDoctorMut.isPending || !doctorUsername.trim()}
+                className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                {createDoctorMut.isPending ? 'Creando...' : 'Crear doctor'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Credenciales generadas al crear un paciente/doctor (para la empresa) */}
       {createdCreds && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">

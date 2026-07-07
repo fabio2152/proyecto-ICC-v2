@@ -3,20 +3,28 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { ArrowLeft, LayoutDashboard, FileText } from 'lucide-react'
 import Dashboard from '../Dashboard'
 import History from '../History'
-import { usePatient } from '../../hooks/usePatients'
+import { usePatient, usePatients } from '../../hooks/usePatients'
 import { useAuth } from '../../auth/AuthContext'
 
 export default function AdminPatientDetail() {
   const { id } = useParams<{ id: string }>()
   const patientId = Number(id)
   const navigate = useNavigate()
-  const { isDoctor, isPatient, patientId: myPatientId } = useAuth()
+  const { isDoctor, isPatient, patientId: myPatientId, username } = useAuth()
   const { data: patient } = usePatient(patientId)
+  const { data: patients } = usePatients()
   const [tab, setTab] = useState<'dashboard' | 'history'>('dashboard')
 
-  // La empresa no accede a datos clínicos. El médico ve a cualquiera.
-  // El paciente solo puede ver su propio monitoreo.
-  if (!isDoctor && !(isPatient && patientId === myPatientId)) {
+  // Paciente: solo su propio monitoreo. Médico: solo pacientes asignados a él.
+  // Empresa (u otro rol): sin acceso a datos clínicos.
+  if (isPatient) {
+    if (patientId !== myPatientId) return <Navigate to="/admin" replace />
+  } else if (isDoctor) {
+    const current = patients?.find((p) => p.id === patientId)
+    if (patients && (!current || current.assigned_doctor !== username)) {
+      return <Navigate to="/admin" replace />
+    }
+  } else {
     return <Navigate to="/admin" replace />
   }
 
