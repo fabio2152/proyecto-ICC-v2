@@ -13,13 +13,12 @@ interface Props {
 export default function PatientForm({ initial, onClose, onSubmit, saving }: Props) {
   const [name, setName] = useState(initial?.name ?? '')
   const [age, setAge] = useState<string>(initial?.age != null ? String(initial.age) : '')
-  const [diagnosis, setDiagnosis] = useState(initial?.diagnosis ?? '')
 
   function submit() {
     onSubmit({
       name: name.trim(),
       age: age.trim() ? Number(age) : null,
-      diagnosis: diagnosis.trim() || null,
+      diagnosis: initial?.diagnosis ?? null, // se conserva; ya no se edita aquí
     })
   }
 
@@ -54,17 +53,6 @@ export default function PatientForm({ initial, onClose, onSubmit, saving }: Prop
               placeholder="Edad en años"
             />
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Diagnóstico</label>
-            <textarea
-              value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
-              rows={3}
-              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary/50"
-              placeholder="Diagnóstico o condición principal"
-            />
-          </div>
-
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Condiciones clínicas</label>
             {initial ? (
