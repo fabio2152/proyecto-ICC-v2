@@ -70,4 +70,6 @@ export interface PatientInput {
   name: string
   age: number | null
   diagnosis: string | null
+  username?: string | null
+  password?: string | null
 }

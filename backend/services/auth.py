@@ -44,17 +44,26 @@ async def make_username(db: AsyncSession, name: str) -> str:
         candidate = f"{base}{n}"
 
 
-async def create_patient_user(db: AsyncSession, patient: Patient) -> tuple[str, str]:
-    """Crea el usuario de un paciente. Devuelve (username, password_plano)."""
-    username = await make_username(db, patient.name)
-    password = f"{username}123"
+async def create_patient_user(
+    db: AsyncSession,
+    patient: Patient,
+    username: str | None = None,
+    password: str | None = None,
+) -> tuple[str, str]:
+    """Crea el usuario de un paciente. Devuelve (username, password_plano).
+
+    Si no se pasan username/password, se autogeneran desde el nombre
+    (usuario = primer nombre en minúscula, contraseña = <usuario>123).
+    """
+    uname = username.strip().lower() if username and username.strip() else await make_username(db, patient.name)
+    pw = password if password else f"{uname}123"
     db.add(User(
-        username=username,
-        password_hash=hash_password(password),
+        username=uname,
+        password_hash=hash_password(pw),
         role="patient",
         patient_id=patient.id,
     ))
-    return username, password
+    return uname, pw
 
 
 # Contraseña de la cuenta de doctor sembrada por defecto (MVP).

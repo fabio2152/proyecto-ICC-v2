@@ -67,6 +67,8 @@ class PatientCreate(BaseModel):
     name: str
     age: int | None = None
     diagnosis: str | None = None
+    username: str | None = None   # si se omite, se autogenera desde el nombre
+    password: str | None = None   # si se omite, será <usuario>123
 
 
 class PatientCreatedOut(BaseModel):
@@ -101,6 +103,7 @@ class PatientListItem(BaseModel):
 
 
 class PatientCredentialsUpdate(BaseModel):
+    name: str | None = None
     username: str | None = None
     password: str | None = None
 

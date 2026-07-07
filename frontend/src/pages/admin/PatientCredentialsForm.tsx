@@ -12,11 +12,13 @@ interface Props {
 }
 
 export default function PatientCredentialsForm({ patientName, initialUsername, onClose, onSubmit, saving, error }: Props) {
+  const [name, setName] = useState(patientName)
   const [username, setUsername] = useState(initialUsername)
   const [password, setPassword] = useState('')
 
   function submit() {
     const input: PatientCredentialsInput = {}
+    if (name.trim() && name.trim() !== patientName) input.name = name.trim()
     if (username.trim() && username.trim() !== initialUsername) input.username = username.trim()
     if (password.trim()) input.password = password.trim()
     onSubmit(input)
@@ -26,7 +28,7 @@ export default function PatientCredentialsForm({ patientName, initialUsername, o
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold">Credenciales de {patientName}</h2>
+          <h2 className="font-semibold">Editar paciente</h2>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
             <X size={16} />
           </button>
@@ -34,12 +36,20 @@ export default function PatientCredentialsForm({ patientName, initialUsername, o
 
         <div className="flex flex-col gap-3">
           <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Nombre completo</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+              autoFocus
+            />
+          </div>
+          <div>
             <label className="text-xs text-muted-foreground mb-1 block">Usuario</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
-              autoFocus
             />
           </div>
           <div>
@@ -62,7 +72,7 @@ export default function PatientCredentialsForm({ patientName, initialUsername, o
           </button>
           <button
             onClick={submit}
-            disabled={saving || !username.trim()}
+            disabled={saving || !username.trim() || !name.trim()}
             className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}

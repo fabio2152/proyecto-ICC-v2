@@ -9,7 +9,7 @@ from schemas import (
     PatientOut, PatientCreate, PatientUpdate, PatientListItem, PatientCreatedOut, AssignDoctorIn,
     PatientCredentialsUpdate, PatientCredentialsOut,
 )
-from deps import require_company, require_doctor
+from deps import require_company, require_doctor, get_current_user
 from services.auth import create_patient_user, hash_password, audit
 
 router = APIRouter()
@@ -32,8 +32,16 @@ async def get_demo_patient(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/patients", response_model=list[PatientListItem])
-async def list_patients(db: AsyncSession = Depends(get_db)):
-    """Lista todos los pacientes con su estado y últimos vitales (panel admin)."""
+async def list_patients(
+    user: Session | None = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lista todos los pacientes con su estado y últimos vitales (panel admin).
+
+    Privacidad: la empresa administra cuentas pero NO ve datos clínicos, así que
+    no se le devuelven diagnóstico ni datos en vivo (vitales/última conexión).
+    """
+    is_company = user is not None and user.role == "company"
     result = await db.execute(select(Patient).order_by(Patient.id))
     patients = list(result.scalars().all())
 
@@ -62,14 +70,15 @@ async def list_patients(db: AsyncSession = Depends(get_db)):
             id=p.id,
             name=p.name,
             age=p.age,
-            diagnosis=p.diagnosis,
+            # La empresa no ve datos clínicos: se ocultan diagnóstico y datos en vivo.
+            diagnosis=None if is_company else p.diagnosis,
             device_key=device.device_key if device else None,
             is_protected=_is_protected(p.id),
             assigned_doctor=p.assigned_doctor,
             username=patient_user.username if patient_user else None,
-            last_seen=device.last_seen if device else None,
-            last_heart_rate=last_hr,
-            last_spo2=last_spo2,
+            last_seen=None if is_company else (device.last_seen if device else None),
+            last_heart_rate=None if is_company else last_hr,
+            last_spo2=None if is_company else last_spo2,
         ))
     return items
 
@@ -100,8 +109,17 @@ async def create_patient(
     )
     db.add(device)
 
-    # Crear también el usuario del paciente (username = primer nombre, pass = <usuario>123)
-    username, password = await create_patient_user(db, patient)
+    # Si la empresa definió un usuario, validar que no exista ya.
+    if payload.username and payload.username.strip():
+        uname = payload.username.strip().lower()
+        clash = await db.execute(select(User).where(User.username == uname))
+        if clash.scalars().first() is not None:
+            raise HTTPException(status_code=409, detail="Ese usuario ya existe")
+
+    # Crear el usuario del paciente (usa lo indicado por la empresa o autogenera).
+    username, password = await create_patient_user(
+        db, patient, username=payload.username, password=payload.password
+    )
 
     await db.commit()
     await db.refresh(patient)
@@ -183,6 +201,12 @@ async def update_patient_credentials(
         raise HTTPException(status_code=404, detail="Usuario del paciente no encontrado")
 
     changes: list[str] = []
+
+    if payload.name is not None:
+        new_name = payload.name.strip()
+        if new_name and new_name != patient.name:
+            patient.name = new_name
+            changes.append("nombre")
 
     if payload.username is not None:
         new = payload.username.strip().lower()

@@ -13,12 +13,18 @@ interface Props {
 export default function PatientForm({ initial, onClose, onSubmit, saving }: Props) {
   const [name, setName] = useState(initial?.name ?? '')
   const [age, setAge] = useState<string>(initial?.age != null ? String(initial.age) : '')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+
+  const isCreate = !initial
 
   function submit() {
     onSubmit({
       name: name.trim(),
       age: age.trim() ? Number(age) : null,
       diagnosis: initial?.diagnosis ?? null, // se conserva; ya no se edita aquí
+      // Solo al crear: si se dejan en blanco, el backend los autogenera.
+      ...(isCreate ? { username: username.trim() || null, password: password.trim() || null } : {}),
     })
   }
 
@@ -53,16 +59,36 @@ export default function PatientForm({ initial, onClose, onSubmit, saving }: Prop
               placeholder="Edad en años"
             />
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Condiciones clínicas</label>
-            {initial ? (
+          {isCreate && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Usuario</label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  placeholder="Se genera del nombre si lo dejas en blanco"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Contraseña</label>
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                  placeholder="Por defecto: usuario + 123"
+                />
+              </div>
+            </>
+          )}
+
+          {initial && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Condiciones clínicas</label>
               <ConditionsCatalog patientId={initial.id} />
-            ) : (
-              <p className="text-xs text-muted-foreground py-2">
-                Guarda el paciente primero para poder añadir sus condiciones clínicas.
-              </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 mt-5 justify-end">

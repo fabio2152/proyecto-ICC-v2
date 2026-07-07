@@ -62,6 +62,7 @@ export function useDeletePatient() {
 }
 
 export interface PatientCredentialsInput {
+  name?: string
   username?: string
   password?: string
 }

@@ -47,9 +47,16 @@ export default function AdminLayout() {
           </NavLink>
         )}
 
-        <div className="ml-auto flex items-center gap-4">
-          <span className="text-xs text-muted-foreground">
-            {(name ?? username)} · {roleLabel}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            {name ?? username}
+          </span>
+          <span
+            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20"
+            title={`Sesión iniciada como ${roleLabel.toLowerCase()}`}
+          >
+            <RoleIcon size={12} />
+            {roleLabel}
           </span>
           <button
             onClick={handleLogout}

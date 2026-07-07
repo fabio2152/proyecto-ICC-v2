@@ -186,14 +186,14 @@ export default function AdminPatients() {
                             <Pencil size={15} />
                           </button>
                         )}
-                        {/* La empresa edita usuario/contraseña de login del paciente. */}
+                        {/* La empresa edita nombre, usuario y contraseña del paciente. */}
                         {isCompany && (
                           <button
                             onClick={() => setEditingCreds(p)}
                             className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                            title="Editar usuario y contraseña"
+                            title="Editar nombre, usuario y contraseña"
                           >
-                            <KeyRound size={15} />
+                            <Pencil size={15} />
                           </button>
                         )}
                         {/* El paciente cambia solo su propia contraseña. */}
