@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base
-from routers import ingest, readings, events, patients, history, stats, admin, conditions
+from routers import ingest, readings, events, patients, history, stats, admin, conditions, ai
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.include_router(history.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(conditions.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 
 @app.get("/")

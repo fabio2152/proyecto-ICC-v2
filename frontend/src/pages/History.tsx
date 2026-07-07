@@ -4,6 +4,7 @@ import { useStats } from '../hooks/useStats'
 import { useAllEvents } from '../hooks/useEvents'
 import ConditionsCatalog from '../components/history/ConditionsCatalog'
 import RawDataLog from '../components/history/RawDataLog'
+import AiKeyConfig from '../components/ai/AiKeyConfig'
 import { formatDate } from '../lib/utils'
 
 const EVENT_LABELS: Record<string, string> = {
@@ -90,6 +91,9 @@ export default function History({ patientId }: { patientId?: number }) {
 
       {/* Registro de datos crudos recibidos por el API */}
       <RawDataLog patientId={patientId} />
+
+      {/* Configuración de la IA (Anthropic) */}
+      <AiKeyConfig />
     </div>
   )
 }

@@ -91,3 +91,11 @@ class PatientCondition(Base):
     emoji: Mapped[str | None] = mapped_column(String)
     category: Mapped[str | None] = mapped_column(String)  # corazon | pulmones | otras
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class AppSetting(Base):
+    """Config clave/valor de la app (ej: la API key de Anthropic para el módulo IA)."""
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[str | None] = mapped_column(String)

@@ -6,6 +6,7 @@ import ActivityCard from '../components/vitals/ActivityCard'
 import ConnectionStatus from '../components/vitals/ConnectionStatus'
 import VitalsChart from '../components/charts/VitalsChart'
 import AlertBanner from '../components/alerts/AlertBanner'
+import AiPanel from '../components/ai/AiPanel'
 
 export default function Dashboard({ patientId }: { patientId?: number }) {
   const { data: reading } = useLatestReading(patientId)
@@ -26,6 +27,8 @@ export default function Dashboard({ patientId }: { patientId?: number }) {
       </div>
 
       <VitalsChart patientId={patientId} />
+
+      <AiPanel patientId={patientId} />
     </div>
   )
 }

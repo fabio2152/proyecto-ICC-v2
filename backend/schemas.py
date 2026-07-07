@@ -143,3 +143,19 @@ class StatsOut(BaseModel):
     avg_spo2: float | None
     min_spo2: float | None
     max_spo2: float | None
+
+
+class AiConfigIn(BaseModel):
+    api_key: str
+
+
+class AiStatusOut(BaseModel):
+    configured: bool
+
+
+class AiAnalyzeIn(BaseModel):
+    type: str  # "summary" | "events" | "trend"
+
+
+class AiAnalyzeOut(BaseModel):
+    text: str
