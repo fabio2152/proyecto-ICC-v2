@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from models import PatientCondition
+from models import PatientCondition, Session
 from schemas import PatientConditionOut, PatientConditionIn
-from deps import resolve_patient_id
+from deps import resolve_patient_id, require_admin
+from services.auth import audit
 
 router = APIRouter()
 
@@ -27,6 +28,7 @@ async def get_conditions(
 async def add_condition(
     payload: PatientConditionIn,
     patient_id: int | None = Query(None),
+    admin: Session = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     pid = await resolve_patient_id(db, patient_id)
@@ -52,6 +54,7 @@ async def add_condition(
     db.add(condition)
     await db.commit()
     await db.refresh(condition)
+    await audit(db, admin.username, "agregar_condicion", f"{payload.name} → paciente #{pid}")
     return condition
 
 
@@ -59,6 +62,7 @@ async def add_condition(
 async def delete_condition(
     condition_id: str,
     patient_id: int | None = Query(None),
+    admin: Session = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     pid = await resolve_patient_id(db, patient_id)
@@ -71,5 +75,7 @@ async def delete_condition(
     condition = result.scalars().first()
     if condition is None:
         raise HTTPException(status_code=404, detail="Condición no encontrada")
+    name = condition.name
     await db.delete(condition)
     await db.commit()
+    await audit(db, admin.username, "quitar_condicion", f"{name} ← paciente #{pid}")

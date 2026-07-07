@@ -1,20 +1,61 @@
-import os
-import secrets
-from fastapi import APIRouter, HTTPException
-from schemas import AdminLogin, AdminLoginResponse
+from fastapi import APIRouter, Depends, HTTPException, Header
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_db
+from models import User, Patient, Session
+from schemas import AdminLogin, AdminLoginResponse, MeOut
+from services.auth import (
+    verify_password,
+    create_session,
+    delete_session,
+    audit,
+)
+from deps import get_current_user, _extract_token
 
 router = APIRouter()
 
-ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
-
 
 @router.post("/admin/login", response_model=AdminLoginResponse)
-async def admin_login(payload: AdminLogin):
-    """Login simple por contraseña fija (no es seguridad real, solo separa vistas)."""
-    user_ok = secrets.compare_digest(payload.username, ADMIN_USERNAME)
-    pass_ok = secrets.compare_digest(payload.password, ADMIN_PASSWORD)
-    if not (user_ok and pass_ok):
+async def login(payload: AdminLogin, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(User).where(User.username == payload.username.strip().lower()))
+    user = res.scalars().first()
+    if user is None or not verify_password(payload.password, user.password_hash):
+        await audit(db, payload.username, "login_fallido", None)
         raise HTTPException(status_code=401, detail="Usuario o contraseña incorrectos")
-    # Token simple — suficiente para una demo académica
-    return AdminLoginResponse(status="ok", token=secrets.token_hex(16))
+
+    token = await create_session(db, user)
+
+    name = None
+    if user.patient_id is not None:
+        patient = await db.get(Patient, user.patient_id)
+        name = patient.name if patient else None
+
+    await audit(db, user.username, "login", f"rol={user.role}")
+    return AdminLoginResponse(
+        status="ok",
+        token=token,
+        role=user.role,
+        patient_id=user.patient_id,
+        name=name,
+        username=user.username,
+    )
+
+
+@router.post("/admin/logout", status_code=204)
+async def logout(authorization: str | None = Header(None), db: AsyncSession = Depends(get_db)):
+    token = _extract_token(authorization)
+    if token:
+        await delete_session(db, token)
+    return None
+
+
+@router.get("/me", response_model=MeOut)
+async def me(user: Session | None = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if user is None:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    name = None
+    if user.patient_id is not None:
+        patient = await db.get(Patient, user.patient_id)
+        name = patient.name if patient else None
+    return MeOut(username=user.username, role=user.role, patient_id=user.patient_id, name=name)

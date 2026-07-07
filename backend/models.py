@@ -99,3 +99,37 @@ class AppSetting(Base):
 
     key: Mapped[str] = mapped_column(String, primary_key=True)
     value: Mapped[str | None] = mapped_column(String)
+
+
+class User(Base):
+    """Usuario de la plataforma. role 'admin' = médico; 'patient' = paciente."""
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)  # 'admin' | 'patient'
+    patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"))
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Session(Base):
+    """Sesión activa: mapea un token a su usuario (persistida en SQLite)."""
+    __tablename__ = "sessions"
+
+    token: Mapped[str] = mapped_column(String, primary_key=True)
+    username: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    patient_id: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class AuditLog(Base):
+    """Registro de auditoría de acciones del sistema."""
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str | None] = mapped_column(String)
+    action: Mapped[str] = mapped_column(String, nullable=False)
+    detail: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())

@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
-from deps import resolve_device
+from deps import resolve_device, require_admin
+from models import Session
 from schemas import AiConfigIn, AiStatusOut, AiAnalyzeIn, AiAnalyzeOut
 from services.ai import get_api_key, set_api_key, run_analysis
+from services.auth import audit
 
 router = APIRouter()
 
@@ -16,8 +18,13 @@ async def ai_status(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/ai/config", response_model=AiStatusOut)
-async def ai_config(payload: AiConfigIn, db: AsyncSession = Depends(get_db)):
+async def ai_config(
+    payload: AiConfigIn,
+    admin: Session = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     await set_api_key(db, payload.api_key.strip())
+    await audit(db, admin.username, "config_ia", "API key de Anthropic actualizada")
     return AiStatusOut(configured=True)
 
 

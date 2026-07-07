@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Lock, Shield } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Lock, Activity } from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
 
 export default function AdminLogin() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/admin'
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +18,8 @@ export default function AdminLogin() {
     setLoading(true)
     try {
       await login(username, password)
-      navigate(from, { replace: true })
+      // Todos van al panel; el panel se adapta según el rol.
+      navigate('/admin', { replace: true })
     } catch {
       setError('Usuario o contraseña incorrectos')
     } finally {
@@ -33,10 +32,10 @@ export default function AdminLogin() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
           <div className="p-3 rounded-2xl bg-primary/10 mb-3">
-            <Shield size={28} className="text-primary" />
+            <Activity size={28} className="text-primary" />
           </div>
-          <h1 className="text-xl font-semibold">Panel de Administración</h1>
-          <p className="text-sm text-muted-foreground mt-1">Acceso restringido</p>
+          <h1 className="text-xl font-semibold">Monitor Biométrico</h1>
+          <p className="text-sm text-muted-foreground mt-1">Inicia sesión para continuar</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 flex flex-col gap-4">
@@ -46,7 +45,7 @@ export default function AdminLogin() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
-              placeholder="admin"
+              placeholder="usuario"
               autoFocus
             />
           </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Eye, Wifi, WifiOff, Lock } from 'lucide-react'
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../../hooks/usePatients'
+import { useAuth } from '../../auth/AuthContext'
 import PatientForm from './PatientForm'
 import type { PatientListItem, PatientInput } from '../../types'
 
@@ -14,10 +15,16 @@ function isConnected(lastSeen: string | null): boolean {
 
 export default function AdminPatients() {
   const navigate = useNavigate()
-  const { data: patients, isLoading } = usePatients()
+  const { isAdmin, patientId: myPatientId } = useAuth()
+  const { data: allPatients, isLoading } = usePatients()
   const createMut = useCreatePatient()
   const updateMut = useUpdatePatient()
   const deleteMut = useDeletePatient()
+
+  // El paciente solo ve su propia fila; el médico ve a todos.
+  const patients = isAdmin
+    ? allPatients
+    : allPatients?.filter((p) => p.id === myPatientId)
 
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<PatientListItem | undefined>(undefined)
@@ -43,16 +50,22 @@ export default function AdminPatients() {
     <div className="max-w-5xl mx-auto flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Pacientes</h1>
-          <p className="text-sm text-muted-foreground">Gestión de todos los pacientes monitorizados</p>
+          <h1 className="text-xl font-semibold">{isAdmin ? 'Pacientes' : 'Mi cuenta'}</h1>
+          <p className="text-sm text-muted-foreground">
+            {isAdmin
+              ? 'Gestión de todos los pacientes monitorizados'
+              : 'Entra a tu monitoreo con el botón de ver'}
+          </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
-        >
-          <Plus size={15} />
-          Nuevo paciente
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+          >
+            <Plus size={15} />
+            Nuevo paciente
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -98,30 +111,32 @@ export default function AdminPatients() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        {p.is_protected && (
-                          <button
-                            onClick={() => navigate('/dashboard')}
-                            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                            title="Ver dashboard del paciente"
-                          >
-                            <Eye size={15} />
-                          </button>
-                        )}
                         <button
-                          onClick={() => openEdit(p)}
+                          onClick={() => navigate(`/admin/patients/${p.id}`)}
                           className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                          title="Editar"
+                          title="Ver monitoreo del paciente"
                         >
-                          <Pencil size={15} />
+                          <Eye size={15} />
                         </button>
-                        <button
-                          onClick={() => setConfirmDelete(p)}
-                          disabled={p.is_protected}
-                          className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-                          title={p.is_protected ? 'No se puede eliminar el Paciente 0' : 'Eliminar'}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => openEdit(p)}
+                              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                              title="Editar"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(p)}
+                              disabled={p.is_protected}
+                              className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                              title={p.is_protected ? 'No se puede eliminar el Paciente 0' : 'Eliminar'}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

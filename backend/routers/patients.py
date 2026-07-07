@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from models import Patient, Device, Reading
+from models import Patient, Device, Reading, User, Session
 from schemas import PatientOut, PatientCreate, PatientUpdate, PatientListItem
+from deps import require_admin
+from services.auth import create_patient_user, audit
 
 router = APIRouter()
 
@@ -73,7 +75,11 @@ async def get_patient(patient_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/patients", response_model=PatientOut, status_code=201)
-async def create_patient(payload: PatientCreate, db: AsyncSession = Depends(get_db)):
+async def create_patient(
+    payload: PatientCreate,
+    admin: Session = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     patient = Patient(name=payload.name, age=payload.age, diagnosis=payload.diagnosis)
     db.add(patient)
     await db.flush()
@@ -85,13 +91,23 @@ async def create_patient(payload: PatientCreate, db: AsyncSession = Depends(get_
         description="Dispositivo generado automáticamente",
     )
     db.add(device)
+
+    # Crear también el usuario del paciente (username = primer nombre, pass = <usuario>123)
+    username, _password = await create_patient_user(db, patient)
+
     await db.commit()
     await db.refresh(patient)
+    await audit(db, admin.username, "crear_paciente", f"{patient.name} (usuario: {username})")
     return patient
 
 
 @router.patch("/patients/{patient_id}", response_model=PatientOut)
-async def update_patient(patient_id: int, payload: PatientUpdate, db: AsyncSession = Depends(get_db)):
+async def update_patient(
+    patient_id: int,
+    payload: PatientUpdate,
+    admin: Session = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     patient = await db.get(Patient, patient_id)
     if patient is None:
         raise HTTPException(status_code=404, detail="Paciente no encontrado")
@@ -105,11 +121,16 @@ async def update_patient(patient_id: int, payload: PatientUpdate, db: AsyncSessi
 
     await db.commit()
     await db.refresh(patient)
+    await audit(db, admin.username, "editar_paciente", f"{patient.name} (#{patient.id})")
     return patient
 
 
 @router.delete("/patients/{patient_id}", status_code=204)
-async def delete_patient(patient_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_patient(
+    patient_id: int,
+    admin: Session = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
     if _is_protected(patient_id):
         raise HTTPException(status_code=403, detail="El Paciente 0 no se puede eliminar")
 
@@ -140,6 +161,21 @@ async def delete_patient(patient_id: int, db: AsyncSession = Depends(get_db)):
     for entry in h_result.scalars().all():
         await db.delete(entry)
 
+    from models import PatientCondition
+    c_result = await db.execute(select(PatientCondition).where(PatientCondition.patient_id == patient_id))
+    for cond in c_result.scalars().all():
+        await db.delete(cond)
+
+    # Borrar el usuario del paciente y sus sesiones
+    u_result = await db.execute(select(User).where(User.patient_id == patient_id))
+    for u in u_result.scalars().all():
+        s_result = await db.execute(select(Session).where(Session.username == u.username))
+        for s in s_result.scalars().all():
+            await db.delete(s)
+        await db.delete(u)
+
+    patient_name = patient.name
     await db.delete(patient)
     await db.commit()
+    await audit(db, admin.username, "eliminar_paciente", f"{patient_name} (#{patient_id})")
     return None

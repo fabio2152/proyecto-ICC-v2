@@ -35,7 +35,7 @@ export default function AiPanel({ patientId }: { patientId?: number }) {
       {!configured ? (
         <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-400/5 border border-amber-400/20 rounded-lg px-3 py-2.5">
           <AlertTriangle size={14} className="flex-shrink-0" />
-          Activa la IA pegando tu API key de Anthropic al final del Historial.
+          Activa la IA pegando tu API key de Anthropic en la sección Configuración.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

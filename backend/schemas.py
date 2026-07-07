@@ -96,6 +96,27 @@ class AdminLogin(BaseModel):
 class AdminLoginResponse(BaseModel):
     status: str
     token: str
+    role: str
+    patient_id: int | None = None
+    name: str | None = None
+    username: str
+
+
+class MeOut(BaseModel):
+    username: str
+    role: str
+    patient_id: int | None = None
+    name: str | None = None
+
+
+class AuditLogOut(BaseModel):
+    id: int
+    username: str | None
+    action: str
+    detail: str | None
+    created_at: dt.datetime
+
+    model_config = {"from_attributes": True}
 
 
 class MedicalHistoryOut(BaseModel):
