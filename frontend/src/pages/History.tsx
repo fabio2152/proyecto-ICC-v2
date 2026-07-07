@@ -41,17 +41,6 @@ export default function History({ patientId }: { patientId?: number }) {
         </div>
       </div>
 
-      {/* Catálogo de condiciones objetivo */}
-      <div className="rounded-lg bg-card border border-border p-5">
-        <div className="mb-4">
-          <h2 className="text-sm font-medium">Condiciones clínicas</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Condiciones de salud del paciente
-          </p>
-        </div>
-        <ConditionsCatalog patientId={patientId} />
-      </div>
-
       {/* Eventos detectados */}
       <div className="rounded-lg bg-card border border-border p-5">
         <button
@@ -86,6 +75,17 @@ export default function History({ patientId }: { patientId?: number }) {
             )}
           </div>
         )}
+      </div>
+
+      {/* Catálogo de condiciones clínicas */}
+      <div className="rounded-lg bg-card border border-border p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-medium">Condiciones clínicas</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Condiciones de salud del paciente
+          </p>
+        </div>
+        <ConditionsCatalog patientId={patientId} />
       </div>
 
       {/* Registro de datos crudos recibidos por el API */}

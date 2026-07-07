@@ -5,10 +5,11 @@ interface Props {
   reading: Reading | undefined
 }
 
+// `color` = color del icono/símbolo · `text` = color del texto del valor
 const ACTIVITY_MAP = {
-  rest:    { label: 'Reposo',    sub: 'Normal',           Icon: Bed,       color: 'text-blue-400',   ring: 'bg-blue-400/10' },
-  walking: { label: 'Caminando', sub: 'Actividad leve',   Icon: Footprints, color: 'text-foreground',  ring: 'bg-muted' },
-  running: { label: 'Corriendo', sub: 'Actividad intensa', Icon: Zap,       color: 'text-orange-400', ring: 'bg-orange-400/10' },
+  rest:    { label: 'Reposo',    sub: 'Normal',           Icon: Bed,       color: 'text-blue-400',   text: 'text-blue-400',   ring: 'bg-blue-400/10' },
+  walking: { label: 'Caminando', sub: 'Actividad leve',   Icon: Footprints, color: 'text-green-400',  text: 'text-foreground', ring: 'bg-green-400/10' },
+  running: { label: 'Corriendo', sub: 'Actividad intensa', Icon: Zap,       color: 'text-orange-400', text: 'text-orange-400', ring: 'bg-orange-400/10' },
 }
 
 export default function ActivityCard({ reading }: Props) {
@@ -26,7 +27,7 @@ export default function ActivityCard({ reading }: Props) {
         </div>
       </div>
       <div className="flex items-end gap-2">
-        <span className={`text-2xl font-bold ${config?.color ?? 'text-muted-foreground'}`}>
+        <span className={`text-2xl font-bold ${config?.text ?? 'text-muted-foreground'}`}>
           {config?.label ?? '--'}
         </span>
       </div>
