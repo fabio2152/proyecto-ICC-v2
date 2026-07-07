@@ -83,7 +83,6 @@ export default function AdminPatients() {
                           </span>
                         )}
                       </div>
-                      {p.diagnosis && <p className="text-xs text-muted-foreground mt-0.5">{p.diagnosis}</p>}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{p.age ?? '—'}</td>
                     <td className="px-4 py-3">
@@ -101,9 +100,9 @@ export default function AdminPatients() {
                       <div className="flex items-center justify-end gap-1">
                         {p.is_protected && (
                           <button
-                            onClick={() => navigate(`/admin/patients/${p.id}`)}
+                            onClick={() => navigate('/dashboard')}
                             className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-                            title="Ver dashboard"
+                            title="Ver dashboard del paciente"
                           >
                             <Eye size={15} />
                           </button>

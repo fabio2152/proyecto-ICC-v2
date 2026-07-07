@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
-import { Shield, LogOut, Users, Monitor } from 'lucide-react'
+import { Shield, LogOut, Users } from 'lucide-react'
 import { useAuth } from '../../auth/AuthContext'
 
 export default function AdminLayout() {
@@ -27,13 +27,6 @@ export default function AdminLayout() {
         >
           <Users size={15} />
           Pacientes
-        </NavLink>
-        <NavLink
-          to="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Monitor size={15} />
-          Vista paciente
         </NavLink>
         <button
           onClick={handleLogout}
