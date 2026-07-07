@@ -7,7 +7,7 @@ import os
 import secrets
 import hashlib
 import unicodedata
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import User, Session, AuditLog, Patient
@@ -83,24 +83,17 @@ async def create_doctor_user(db: AsyncSession, username: str) -> tuple[str, str]
 async def ensure_core_users(db: AsyncSession) -> None:
     """Crea/asegura las cuentas de empresa y doctor (idempotente).
 
-    Migra el legacy 'admin' (rol 'admin') a rol 'doctor' para que siga sirviendo
-    como cuenta del médico.
+    Elimina el legacy 'admin'/'admin123': ya no se usa como cuenta del médico
+    (ahora el médico entra con doctor1/doctor123). Se borran también sus sesiones.
     """
     changed = False
 
-    # Legacy admin → doctor
+    # Legacy admin → eliminado (ya no se usa)
     res = await db.execute(select(User).where(User.username == ADMIN_USERNAME))
     admin = res.scalars().first()
-    if admin is None:
-        db.add(User(
-            username=ADMIN_USERNAME,
-            password_hash=hash_password(ADMIN_PASSWORD),
-            role="doctor",
-            patient_id=None,
-        ))
-        changed = True
-    elif admin.role != "doctor":
-        admin.role = "doctor"
+    if admin is not None:
+        await db.execute(delete(Session).where(Session.username == ADMIN_USERNAME))
+        await db.delete(admin)
         changed = True
 
     # Empresa y doctor
