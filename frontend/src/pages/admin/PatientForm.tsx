@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { PatientInput, PatientListItem } from '../../types'
+import ConditionsCatalog from '../../components/history/ConditionsCatalog'
 
 interface Props {
   initial?: PatientListItem
@@ -24,7 +25,7 @@ export default function PatientForm({ initial, onClose, onSubmit, saving }: Prop
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md">
+      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold">{initial ? 'Editar paciente' : 'Nuevo paciente'}</h2>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
@@ -62,6 +63,17 @@ export default function PatientForm({ initial, onClose, onSubmit, saving }: Prop
               className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary/50"
               placeholder="Diagnóstico o condición principal"
             />
+          </div>
+
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Condiciones clínicas</label>
+            {initial ? (
+              <ConditionsCatalog patientId={initial.id} />
+            ) : (
+              <p className="text-xs text-muted-foreground py-2">
+                Guarda el paciente primero para poder añadir sus condiciones clínicas.
+              </p>
+            )}
           </div>
         </div>
 

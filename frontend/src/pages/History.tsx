@@ -83,10 +83,10 @@ export default function History({ patientId }: { patientId?: number }) {
         <div className="mb-4">
           <h2 className="text-sm font-medium">Condiciones clínicas</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Condiciones de salud del paciente
+            Condiciones de salud del paciente (se editan desde el panel de administración)
           </p>
         </div>
-        <ConditionsCatalog patientId={patientId} />
+        <ConditionsCatalog patientId={patientId} readOnly />
       </div>
 
       {/* Registro de datos crudos recibidos por el API */}

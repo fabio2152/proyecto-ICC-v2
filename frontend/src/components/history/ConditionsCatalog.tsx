@@ -58,7 +58,13 @@ const GROUPS: { category: Category; label: string }[] = [
   { category: 'otras', label: '🔹 Otras condiciones' },
 ]
 
-export default function ConditionsCatalog({ patientId }: { patientId?: number }) {
+export default function ConditionsCatalog({
+  patientId,
+  readOnly = false,
+}: {
+  patientId?: number
+  readOnly?: boolean
+}) {
   const [showPicker, setShowPicker] = useState(false)
 
   // Las condiciones se guardan en el backend (persisten entre dispositivos).
@@ -95,7 +101,9 @@ export default function ConditionsCatalog({ patientId }: { patientId?: number })
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <span className="text-3xl">🩺</span>
             <p className="text-sm text-muted-foreground">
-              Aún no se han añadido condiciones para este paciente.
+              {readOnly
+                ? 'No hay condiciones registradas para este paciente.'
+                : 'Aún no se han añadido condiciones para este paciente.'}
             </p>
           </div>
         )}
@@ -112,24 +120,28 @@ export default function ConditionsCatalog({ patientId }: { patientId?: number })
                 <p className="text-sm font-medium leading-tight">{c.name}</p>
                 <p className={`text-xs mt-0.5 ${style.text}`}>{CATEGORY_STYLE[c.category].label}</p>
               </div>
-              <button
-                onClick={() => remove(c.id)}
-                className="flex-shrink-0 p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
-                title="Eliminar"
-              >
-                <X size={13} />
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={() => remove(c.id)}
+                  className="flex-shrink-0 p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                  title="Eliminar"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           )
         })}
 
-        <button
-          onClick={() => setShowPicker(true)}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-muted/30 transition-all duration-200 mt-1"
-        >
-          <Plus size={15} />
-          Añadir condición
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setShowPicker(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-muted/30 transition-all duration-200 mt-1"
+          >
+            <Plus size={15} />
+            Añadir condición
+          </button>
+        )}
       </div>
 
       {/* Modal picker */}
