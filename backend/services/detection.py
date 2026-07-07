@@ -19,6 +19,10 @@ BRADYCARDIA_CONSECUTIVE = int(os.getenv("BRADYCARDIA_CONSECUTIVE", "24"))
 
 def classify_activity(accel_x: float, accel_y: float, accel_z: float) -> str:
     magnitude = sqrt(accel_x**2 + accel_y**2 + accel_z**2)
+    # Un pico de impacto (caída) no es locomoción sostenida: no lo marcamos como
+    # "corriendo" para no contradecir el evento de caída.
+    if magnitude >= FALL_IMPACT_G:
+        return "rest"
     if magnitude < 1.05:
         return "rest"
     elif magnitude < 1.5:
