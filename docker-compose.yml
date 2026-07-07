@@ -1,0 +1,43 @@
+# Encapsula toda la plataforma VitalSOS en contenedores.
+#   backend  → FastAPI + Uvicorn (Python)         :8000 (interno)
+#   frontend → build de Vite servido por Nginx    :80  → publicado en :8080
+# La BD SQLite persiste en el volumen "monitor-db".
+#
+# Uso:
+#   docker compose up --build        # levanta todo
+#   -> App:   http://localhost:8080
+#   -> Docs:  http://localhost:8080/docs
+#   ESP32/simulador -> POST http://<host>:8080/api/ingest
+
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:////app/data/monitor.db
+      DEMO_DEVICE_KEY: esp32-dev-key-001
+      DEMO_PATIENT_ID: "1"
+      SENSOR_INTERVAL_SECONDS: "5"
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      LOW_SPO2_THRESHOLD: "92"
+      LOW_SPO2_CONSECUTIVE: "12"
+      TACHYCARDIA_BPM: "100"
+      TACHYCARDIA_CONSECUTIVE: "24"
+      BRADYCARDIA_BPM: "50"
+      BRADYCARDIA_CONSECUTIVE: "24"
+      # Mismo origen (Nginx hace proxy), pero se deja localhost por si se llama directo.
+      ALLOWED_ORIGINS: "http://localhost:8080,http://localhost:5173"
+    volumes:
+      - monitor-db:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  monitor-db:
