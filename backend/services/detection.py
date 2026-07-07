@@ -64,7 +64,9 @@ async def run_detection(
 
     if len(readings) >= LOW_SPO2_CONSECUTIVE:
         window = readings[:LOW_SPO2_CONSECUTIVE]
-        if all(r.spo2 is not None and r.spo2 < LOW_SPO2_THRESHOLD for r in window):
+        # spo2 > 0 descarta lecturas de "sensor sin contacto" (el MAX30102
+        # devuelve 0 cuando no hay dedo/muñeca) para no disparar falsa hipoxia.
+        if all(r.spo2 is not None and 0 < r.spo2 < LOW_SPO2_THRESHOLD for r in window):
             if not await _has_active_event(db, device_id, "low_spo2"):
                 event = Event(
                     device_id=device_id,
@@ -92,7 +94,9 @@ async def run_detection(
 
     if len(readings) >= BRADYCARDIA_CONSECUTIVE:
         window = readings[:BRADYCARDIA_CONSECUTIVE]
-        if all(r.heart_rate is not None and r.heart_rate < BRADYCARDIA_BPM for r in window):
+        # heart_rate > 0 descarta lecturas de "sensor sin contacto" (el MAX30102
+        # devuelve 0 cuando no hay dedo/muñeca) para no disparar falsa bradicardia.
+        if all(r.heart_rate is not None and 0 < r.heart_rate < BRADYCARDIA_BPM for r in window):
             if not await _has_active_event(db, device_id, "bradycardia"):
                 event = Event(
                     device_id=device_id,
