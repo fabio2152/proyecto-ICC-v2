@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models import Device, Reading
 from schemas import IngestPayload, IngestResponse
-from services.detection import classify_activity, run_detection, detect_fall_from_accel
+from services.detection import classify_activity, run_detection, detect_fall
 
 router = APIRouter()
 
@@ -37,10 +37,11 @@ async def ingest(payload: IngestPayload, db: AsyncSession = Depends(get_db)):
     db.add(reading)
     await db.flush()
 
-    # Detección de caída EN LA PLATAFORMA a partir del acelerómetro, combinada con
-    # el flag del ESP32 (cualquiera de los dos dispara el evento).
-    fall = payload.fall_detected or detect_fall_from_accel(
-        payload.accel_x, payload.accel_y, payload.accel_z
+    # Detección de caída EN LA PLATAFORMA: impacto (acelerómetro) + rotación
+    # (giroscopio). Combinada con el flag del ESP32 (cualquiera dispara el evento).
+    fall = payload.fall_detected or detect_fall(
+        payload.accel_x, payload.accel_y, payload.accel_z,
+        payload.gyro_x, payload.gyro_y, payload.gyro_z,
     )
     events_triggered = await run_detection(db, device.id, fall, reading.id)
 

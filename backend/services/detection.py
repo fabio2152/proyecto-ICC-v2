@@ -5,9 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Reading, Event
 import os
 
-# Umbral de impacto para detección de caída (magnitud del acelerómetro en g).
-# Reposo ≈ 1g, caminar ≈ 1-1.5g, correr < 2g; un golpe/caída supera ~2.5g.
-FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.5"))
+# Detección de caída = impacto fuerte (acelerómetro) + rotación brusca (giroscopio),
+# a la vez. Una caída real combina ambos; así evitamos falsos positivos por solo
+# aceleración lineal. Umbrales configurables por .env.
+FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.5"))       # magnitud del acelerómetro (g)
+FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "150"))       # magnitud del giroscopio (°/s)
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
@@ -30,13 +32,18 @@ def classify_activity(accel_x: float, accel_y: float, accel_z: float) -> str:
     return "running"
 
 
-def detect_fall_from_accel(accel_x: float, accel_y: float, accel_z: float) -> bool:
-    """Detección de caída en la plataforma: un pico de aceleración (impacto)
-    por encima del umbral. Simple y robusto — no depende del firmware del ESP32."""
-    if accel_x is None or accel_y is None or accel_z is None:
+def detect_fall(
+    accel_x: float, accel_y: float, accel_z: float,
+    gyro_x: float, gyro_y: float, gyro_z: float,
+) -> bool:
+    """Detección de caída en la plataforma: impacto fuerte en el acelerómetro
+    (≥ FALL_IMPACT_G) Y rotación brusca en el giroscopio (≥ FALL_GYRO_DPS), a la vez.
+    Simple y robusto — no depende del firmware del ESP32."""
+    if None in (accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z):
         return False
-    magnitude = sqrt(accel_x**2 + accel_y**2 + accel_z**2)
-    return magnitude >= FALL_IMPACT_G
+    accel_mag = sqrt(accel_x**2 + accel_y**2 + accel_z**2)
+    gyro_mag = sqrt(gyro_x**2 + gyro_y**2 + gyro_z**2)
+    return accel_mag >= FALL_IMPACT_G and gyro_mag >= FALL_GYRO_DPS
 
 
 async def _has_active_event(db: AsyncSession, device_id: int, event_type: str) -> bool:
