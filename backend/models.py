@@ -78,3 +78,16 @@ class MedicalHistory(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())
 
     patient: Mapped["Patient"] = relationship(back_populates="medical_history")
+
+
+class PatientCondition(Base):
+    """Condición clínica del paciente (catálogo interactivo del historial)."""
+    __tablename__ = "patient_conditions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), nullable=False)
+    condition_id: Mapped[str] = mapped_column(String, nullable=False)  # ej: "diabetes"
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    emoji: Mapped[str | None] = mapped_column(String)
+    category: Mapped[str | None] = mapped_column(String)  # corazon | pulmones | otras
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime, server_default=func.now())

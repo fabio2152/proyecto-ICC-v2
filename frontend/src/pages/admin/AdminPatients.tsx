@@ -8,7 +8,8 @@ import type { PatientListItem, PatientInput } from '../../types'
 function isConnected(lastSeen: string | null): boolean {
   if (!lastSeen) return false
   const utc = lastSeen.endsWith('Z') ? lastSeen : lastSeen + 'Z'
-  return Date.now() - new Date(utc).getTime() < 15000
+  // 30s: el ESP32 envía cada 5-10s, así que 30s sin datos = realmente sin señal.
+  return Date.now() - new Date(utc).getTime() < 30000
 }
 
 export default function AdminPatients() {

@@ -18,7 +18,8 @@ export default function ConnectionStatus({ lastSeen, patientName }: Props) {
   // El backend devuelve timestamps UTC sin sufijo 'Z'. Sin él, JavaScript
   // los interpreta como hora local (UTC-5 en Perú) → diferencia siempre negativa.
   const lastSeenUtc = lastSeen ? (lastSeen.endsWith('Z') ? lastSeen : lastSeen + 'Z') : undefined
-  const connected = lastSeenUtc !== undefined && Date.now() - new Date(lastSeenUtc).getTime() < 15000
+  // 30s: el ESP32 envía cada 5-10s, así que 30s sin datos = realmente sin señal.
+  const connected = lastSeenUtc !== undefined && Date.now() - new Date(lastSeenUtc).getTime() < 30000
 
   return (
     <div className="flex items-center gap-3">

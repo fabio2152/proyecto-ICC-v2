@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
+import { useConditions, useAddCondition, useDeleteCondition } from '../../hooks/useConditions'
 
 type Category = 'corazon' | 'pulmones' | 'otras'
 
@@ -51,23 +52,6 @@ const ALL_CONDITIONS: Condition[] = [
   { id: 'pregnancy_risk',   name: 'Embarazo de riesgo',                    emoji: '🤰', category: 'otras' },
 ]
 
-function storageKey(patientId?: number): string {
-  return `patient_conditions_${patientId ?? 'demo'}`
-}
-
-function loadSaved(patientId?: number): Condition[] {
-  try {
-    const raw = localStorage.getItem(storageKey(patientId))
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function save(patientId: number | undefined, conditions: Condition[]) {
-  localStorage.setItem(storageKey(patientId), JSON.stringify(conditions))
-}
-
 const GROUPS: { category: Category; label: string }[] = [
   { category: 'corazon', label: '❤️ Corazón' },
   { category: 'pulmones', label: '🫁 Pulmones' },
@@ -75,20 +59,29 @@ const GROUPS: { category: Category; label: string }[] = [
 ]
 
 export default function ConditionsCatalog({ patientId }: { patientId?: number }) {
-  const [selected, setSelected] = useState<Condition[]>(() => loadSaved(patientId))
   const [showPicker, setShowPicker] = useState(false)
 
-  // Recarga las condiciones cuando cambia el paciente (vista admin)
-  useEffect(() => { setSelected(loadSaved(patientId)) }, [patientId])
+  // Las condiciones se guardan en el backend (persisten entre dispositivos).
+  const { data: saved } = useConditions(patientId)
+  const addMut = useAddCondition(patientId)
+  const deleteMut = useDeleteCondition(patientId)
 
-  useEffect(() => { save(patientId, selected) }, [patientId, selected])
+  // Reconstruye las condiciones seleccionadas cruzando lo guardado con el catálogo.
+  const selected: Condition[] = (saved ?? [])
+    .map(s => ALL_CONDITIONS.find(c => c.id === s.condition_id))
+    .filter((c): c is Condition => c !== undefined)
 
   function remove(id: string) {
-    setSelected(prev => prev.filter(c => c.id !== id))
+    deleteMut.mutate(id)
   }
 
   function add(condition: Condition) {
-    setSelected(prev => prev.find(c => c.id === condition.id) ? prev : [...prev, condition])
+    addMut.mutate({
+      condition_id: condition.id,
+      name: condition.name,
+      emoji: condition.emoji,
+      category: condition.category,
+    })
     setShowPicker(false)
   }
 

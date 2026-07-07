@@ -117,6 +117,25 @@ class MedicalHistoryIn(BaseModel):
     date: dt.date | None = None
 
 
+class PatientConditionOut(BaseModel):
+    id: int
+    patient_id: int
+    condition_id: str
+    name: str
+    emoji: str | None
+    category: str | None
+    created_at: dt.datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PatientConditionIn(BaseModel):
+    condition_id: str
+    name: str
+    emoji: str | None = None
+    category: str | None = None
+
+
 class StatsOut(BaseModel):
     avg_hr: float | None
     min_hr: float | None

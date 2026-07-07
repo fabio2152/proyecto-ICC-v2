@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react'
 import { useStats } from '../hooks/useStats'
 import { useAllEvents } from '../hooks/useEvents'
 import ConditionsCatalog from '../components/history/ConditionsCatalog'
@@ -12,6 +14,7 @@ const EVENT_LABELS: Record<string, string> = {
 export default function History({ patientId }: { patientId?: number }) {
   const { data: stats } = useStats(patientId)
   const { data: events } = useAllEvents(patientId)
+  const [eventsOpen, setEventsOpen] = useState(false)
 
   return (
     <div className="max-w-5xl mx-auto flex flex-col gap-6">
@@ -51,21 +54,36 @@ export default function History({ patientId }: { patientId?: number }) {
 
       {/* Eventos detectados */}
       <div className="rounded-lg bg-card border border-border p-5">
-        <h2 className="text-sm font-medium mb-4">Eventos detectados</h2>
-        {!events || events.length === 0 ? (
-          <p className="text-muted-foreground text-sm">Sin eventos registrados.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {events.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg border border-border text-sm">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.severity === 'critical' ? 'bg-red-500/15 text-red-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
-                  {e.severity}
-                </span>
-                <span className="flex-1">{EVENT_LABELS[e.type] ?? e.type}</span>
-                <span className="text-xs text-muted-foreground">{formatDate(e.detected_at)}</span>
-                {e.acknowledged && <span className="text-xs text-green-400">✓ Reconocido</span>}
+        <button
+          onClick={() => setEventsOpen((o) => !o)}
+          className="flex items-center gap-2 w-full text-left"
+        >
+          {eventsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <AlertTriangle size={15} className="text-muted-foreground" />
+          <h2 className="text-sm font-medium flex-1">Eventos detectados</h2>
+          {events && events.length > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">{events.length}</span>
+          )}
+        </button>
+
+        {eventsOpen && (
+          <div className="mt-4">
+            {!events || events.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Sin eventos registrados.</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {events.map((e) => (
+                  <div key={e.id} className="flex items-center gap-3 p-3 rounded-lg border border-border text-sm">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.severity === 'critical' ? 'bg-red-500/15 text-red-400' : 'bg-yellow-500/15 text-yellow-400'}`}>
+                      {e.severity}
+                    </span>
+                    <span className="flex-1">{EVENT_LABELS[e.type] ?? e.type}</span>
+                    <span className="text-xs text-muted-foreground">{formatDate(e.detected_at)}</span>
+                    {e.acknowledged && <span className="text-xs text-green-400">✓ Reconocido</span>}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
