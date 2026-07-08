@@ -9,17 +9,17 @@ import os
 # Una caída real combina ambos; el AND evita falsos positivos por solo aceleración.
 # Umbrales por encima del estático real del ESP32 (accel ≤1.2g, gyro ≤70°/s) pero
 # ahora más sensibles: basta un impacto vertical moderado y una caída no tan rápida.
-FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "1.8"))       # magnitud del acelerómetro (g)
+FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.0"))       # magnitud del acelerómetro (g)
 FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "100"))       # magnitud del giroscopio (°/s)
 
-# Golpe muy fuerte: no es locomoción sostenida, se trata como reposo para no marcar
-# "corriendo" durante un impacto. Independiente del umbral de caída.
-IMPACT_G = float(os.getenv("IMPACT_G", "3.0"))
-
-# Bandas de actividad. La banda de reposo es amplia para que el ruido del sensor en
-# estado quieto (≈1.1–1.2g) no salte a "caminando" todo el tiempo.
-REST_MAX_G = float(os.getenv("REST_MAX_G", "1.25"))            # < 1.25g → reposo
-WALK_MAX_G = float(os.getenv("WALK_MAX_G", "2.0"))             # 1.25–2.0g → caminando
+# Bandas de actividad:
+#   < 1.05g          → reposo
+#   1.05 – 1.5g      → caminando
+#   1.5 – 2.0g       → corriendo
+#   ≥ 2.0g           → zona de caída (impacto): no es locomoción, se trata como reposo
+REST_MAX_G = float(os.getenv("REST_MAX_G", "1.05"))            # < 1.05g → reposo
+WALK_MAX_G = float(os.getenv("WALK_MAX_G", "1.5"))             # 1.05–1.5g → caminando
+IMPACT_G = float(os.getenv("IMPACT_G", "2.0"))                 # ≥ 2.0g → caída/impacto
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
 LOW_SPO2_CONSECUTIVE = int(os.getenv("LOW_SPO2_CONSECUTIVE", "12"))
