@@ -13,12 +13,12 @@ FALL_IMPACT_G = float(os.getenv("FALL_IMPACT_G", "2.0"))       # magnitud del ac
 FALL_GYRO_DPS = float(os.getenv("FALL_GYRO_DPS", "100"))       # magnitud del giroscopio (°/s)
 
 # Bandas de actividad:
-#   < 1.05g          → reposo
-#   1.05 – 1.5g      → caminando
+#   < 1.15g          → reposo
+#   1.15 – 1.5g      → caminando
 #   1.5 – 2.0g       → corriendo
 #   ≥ 2.0g           → zona de caída (impacto): no es locomoción, se trata como reposo
-REST_MAX_G = float(os.getenv("REST_MAX_G", "1.05"))            # < 1.05g → reposo
-WALK_MAX_G = float(os.getenv("WALK_MAX_G", "1.5"))             # 1.05–1.5g → caminando
+REST_MAX_G = float(os.getenv("REST_MAX_G", "1.15"))            # < 1.15g → reposo
+WALK_MAX_G = float(os.getenv("WALK_MAX_G", "1.5"))             # 1.15–1.5g → caminando
 IMPACT_G = float(os.getenv("IMPACT_G", "2.0"))                 # ≥ 2.0g → caída/impacto
 
 LOW_SPO2_THRESHOLD = float(os.getenv("LOW_SPO2_THRESHOLD", "92"))
